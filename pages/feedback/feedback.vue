@@ -1,7 +1,7 @@
 <template>
     <view class="fb">
         <view class="tabs">
-            <text :class="['tb', tab === 'new' ? 'on' : '']" @tap="tab = 'new'">我要反馈</text>
+            <text :class="['tb', tab === 'new' ? 'on' : '']" @tap="switchNew">我要反馈</text>
             <text :class="['tb', tab === 'mine' ? 'on' : '']" @tap="switchMine">我的反馈</text>
         </view>
 
@@ -10,13 +10,13 @@
             <view class="fld">
                 <text class="lb">反馈类型</text>
                 <view class="chips">
-                    <text v-for="t in types" :key="t.k" :class="['chip', form.type === t.k ? 'on' : '']" @tap="form.type = t.k">{{ t.n }}</text>
+                    <text v-for="t in types" :key="t.k" :class="['chip', form.type === t.k ? 'on' : '']" :data-k="t.k" @tap="pickType">{{ t.n }}</text>
                 </view>
             </view>
             <view class="fld">
                 <text class="lb">相关分类</text>
                 <view class="chips">
-                    <text v-for="c in cats" :key="c.k" :class="['chip', form.category === c.k ? 'on' : '']" @tap="form.category = c.k">{{ c.n }}</text>
+                    <text v-for="c in cats" :key="c.k" :class="['chip', form.category === c.k ? 'on' : '']" :data-k="c.k" @tap="pickCat">{{ c.n }}</text>
                 </view>
             </view>
             <view class="fld">
@@ -64,6 +64,9 @@ export default {
         }
     },
     methods: {
+        switchNew() { this.tab = 'new' },
+        pickType(e) { this.form.type = e.currentTarget.dataset.k },
+        pickCat(e) { this.form.category = e.currentTarget.dataset.k },
         typeName(t) { return ({ complaint: '投诉', suggestion: '建议', other: '其他' })[t] || t },
         catName(c) { return ({ activity: '活动', service: '服务', point: '积分', system: '系统', other: '其他' })[c] || c },
         stName(s) { return ({ pending: '待处理', processing: '处理中', resolved: '已解决', closed: '已关闭' })[s] || s },

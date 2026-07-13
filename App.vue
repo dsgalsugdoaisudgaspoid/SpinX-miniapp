@@ -15,8 +15,7 @@ export default {
 </script>
 
 <style lang="scss">
-/* 全局样式（各页面样式块中通过 uni.scss 自动获得 theme 变量） */
-@import './common/theme.scss';
+/* 全局样式（scss 变量由 uni.scss 自动注入，无需 @import） */
 
 page {
     background-color: $paper;

@@ -28,18 +28,18 @@
         <!-- 隐私开关 -->
         <view class="group">
             <view class="gh">隐私 · 仅管理员可见完整资料</view>
-            <view class="frow"><text class="fk flex1">展示骑行装备</text><switch :checked="privacy.showEquipment" color="#12d07a" @change="e => savePrivacy('showEquipment', e)" /></view>
-            <view class="frow"><text class="fk flex1">展示骑行年限</text><switch :checked="privacy.showRidingYears" color="#12d07a" @change="e => savePrivacy('showRidingYears', e)" /></view>
-            <view class="frow noline"><text class="fk flex1">展示联系方式</text><switch :checked="privacy.showContact" color="#12d07a" @change="e => savePrivacy('showContact', e)" /></view>
+            <view class="frow"><text class="fk flex1">展示骑行装备</text><switch :checked="privacy.showEquipment" color="#12d07a" data-key="showEquipment" @change="savePrivacy" /></view>
+            <view class="frow"><text class="fk flex1">展示骑行年限</text><switch :checked="privacy.showRidingYears" color="#12d07a" data-key="showRidingYears" @change="savePrivacy" /></view>
+            <view class="frow noline"><text class="fk flex1">展示联系方式</text><switch :checked="privacy.showContact" color="#12d07a" data-key="showContact" @change="savePrivacy" /></view>
         </view>
 
         <!-- 通知开关 -->
         <view class="group">
             <view class="gh">消息通知</view>
-            <view class="frow"><text class="fk flex1">活动提醒</text><switch :checked="notify.activityReminder" color="#12d07a" @change="e => saveNotify('activityReminder', e)" /></view>
-            <view class="frow"><text class="fk flex1">积分变动</text><switch :checked="notify.pointChange" color="#12d07a" @change="e => saveNotify('pointChange', e)" /></view>
-            <view class="frow"><text class="fk flex1">相册更新</text><switch :checked="notify.albumUpdate" color="#12d07a" @change="e => saveNotify('albumUpdate', e)" /></view>
-            <view class="frow noline"><text class="fk flex1">官方公告</text><switch :checked="notify.officialAnnouncement" color="#12d07a" @change="e => saveNotify('officialAnnouncement', e)" /></view>
+            <view class="frow"><text class="fk flex1">活动提醒</text><switch :checked="notify.activityReminder" color="#12d07a" data-key="activityReminder" @change="saveNotify" /></view>
+            <view class="frow"><text class="fk flex1">积分变动</text><switch :checked="notify.pointChange" color="#12d07a" data-key="pointChange" @change="saveNotify" /></view>
+            <view class="frow"><text class="fk flex1">相册更新</text><switch :checked="notify.albumUpdate" color="#12d07a" data-key="albumUpdate" @change="saveNotify" /></view>
+            <view class="frow noline"><text class="fk flex1">官方公告</text><switch :checked="notify.officialAnnouncement" color="#12d07a" data-key="officialAnnouncement" @change="saveNotify" /></view>
         </view>
 
         <!-- 账号 -->
@@ -96,13 +96,17 @@ export default {
             }
             try { await updateProfile(payload); uni.showToast({ title: '已保存', icon: 'success' }) } catch (e) {}
         },
-        async savePrivacy(key, e) {
-            this.privacy[key] = e.detail.value
-            try { await updatePrivacy({ [key]: e.detail.value }) } catch (err) {}
+        async savePrivacy(e) {
+            const key = e.currentTarget.dataset.key
+            const val = e.detail.value
+            this.privacy[key] = val
+            try { await updatePrivacy({ [key]: val }) } catch (err) {}
         },
-        async saveNotify(key, e) {
-            this.notify[key] = e.detail.value
-            try { await updateNotificationSettings({ [key]: e.detail.value }) } catch (err) {}
+        async saveNotify(e) {
+            const key = e.currentTarget.dataset.key
+            const val = e.detail.value
+            this.notify[key] = val
+            try { await updateNotificationSettings({ [key]: val }) } catch (err) {}
         },
         onPhone(e) {
             const d = e.detail

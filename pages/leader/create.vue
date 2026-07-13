@@ -9,16 +9,16 @@
         </view>
 
         <view class="group">
-            <view class="frow"><text class="fk">出发日期</text><picker class="pk" mode="date" :value="f.startDate" @change="e => set('startDate', e)"><text :class="['fv', f.startDate ? '' : 'phc']">{{ f.startDate || '选择日期' }}</text></picker></view>
-            <view class="frow"><text class="fk">出发时间</text><picker class="pk" mode="time" :value="f.startTime" @change="e => set('startTime', e)"><text :class="['fv', f.startTime ? '' : 'phc']">{{ f.startTime || '选择时间' }}</text></picker></view>
-            <view class="frow"><text class="fk">结束时间</text><picker mode="time" :value="f.endTime" @change="e => set('endTime', e)"><text :class="['fv', f.endTime ? '' : 'phc']">{{ f.endTime || '选择时间' }}</text></picker></view>
-            <view class="frow noline"><text class="fk">报名截止</text><picker mode="date" :value="f.deadlineDate" @change="e => set('deadlineDate', e)"><text :class="['fv', f.deadlineDate ? '' : 'phc']">{{ f.deadlineDate || '选择日期' }}</text></picker></view>
+            <view class="frow"><text class="fk">出发日期</text><picker class="pk" mode="date" :value="f.startDate" data-key="startDate" @change="onPick"><text :class="['fv', f.startDate ? '' : 'phc']">{{ f.startDate || '选择日期' }}</text></picker></view>
+            <view class="frow"><text class="fk">出发时间</text><picker class="pk" mode="time" :value="f.startTime" data-key="startTime" @change="onPick"><text :class="['fv', f.startTime ? '' : 'phc']">{{ f.startTime || '选择时间' }}</text></picker></view>
+            <view class="frow"><text class="fk">结束时间</text><picker class="pk" mode="time" :value="f.endTime" data-key="endTime" @change="onPick"><text :class="['fv', f.endTime ? '' : 'phc']">{{ f.endTime || '选择时间' }}</text></picker></view>
+            <view class="frow noline"><text class="fk">报名截止</text><picker class="pk" mode="date" :value="f.deadlineDate" data-key="deadlineDate" @change="onPick"><text :class="['fv', f.deadlineDate ? '' : 'phc']">{{ f.deadlineDate || '选择日期' }}</text></picker></view>
         </view>
 
         <view class="group">
             <view class="frow"><text class="fk">集合地点</text><input class="fi" v-model="f.meetingPoint" placeholder="如 028.C 青年创意社区" placeholder-class="ph" /></view>
             <view class="frow"><text class="fk">骑行里程</text><input class="fi" type="number" v-model="f.distance" placeholder="km" placeholder-class="ph" /></view>
-            <view class="frow"><text class="fk">难度星级</text><picker :range="difficulties" :value="f.difficulty - 1" @change="e => f.difficulty = Number(e.detail.value) + 1"><text class="fv">{{ '★'.repeat(f.difficulty) }}</text></picker></view>
+            <view class="frow"><text class="fk">难度星级</text><picker class="pk" :range="difficulties" :value="f.difficulty - 1" @change="onDifficulty"><text class="fv">{{ starText }}</text></picker></view>
             <view class="frow noline"><text class="fk">人数上限</text><input class="fi" type="number" v-model="f.maxParticipants" placeholder="如 25" placeholder-class="ph" /></view>
         </view>
 
@@ -32,7 +32,7 @@
             <view class="frow"><text class="fk">线下费用</text><input class="fi" type="number" v-model="f.fee" placeholder="0 为免费" placeholder-class="ph" /></view>
             <view class="frow"><text class="fk">基础积分</text><input class="fi" type="number" v-model="f.basePoints" placeholder="如 30" placeholder-class="ph" /></view>
             <view class="frow"><text class="fk">全勤加分</text><input class="fi" type="number" v-model="f.fullAttendanceBonus" placeholder="如 10" placeholder-class="ph" /></view>
-            <view class="frow noline"><text class="fk flex1">自动通过报名</text><switch :checked="f.approvalMode === 'auto'" color="#12d07a" @change="e => f.approvalMode = e.detail.value ? 'auto' : 'manual'" /></view>
+            <view class="frow noline"><text class="fk flex1">自动通过报名</text><switch :checked="f.approvalMode === 'auto'" color="#12d07a" @change="onApproval" /></view>
         </view>
 
         <view class="g-btn submit" @tap="submit">发布活动</view>
@@ -55,8 +55,13 @@ export default {
             }
         }
     },
+    computed: {
+        starText() { return '★'.repeat(this.f.difficulty) }
+    },
     methods: {
-        set(k, e) { this.f[k] = e.detail.value },
+        onPick(e) { this.f[e.currentTarget.dataset.key] = e.detail.value },
+        onDifficulty(e) { this.f.difficulty = Number(e.detail.value) + 1 },
+        onApproval(e) { this.f.approvalMode = e.detail.value ? 'auto' : 'manual' },
         toggleTag(t) { const i = this.f.tags.indexOf(t); i > -1 ? this.f.tags.splice(i, 1) : this.f.tags.push(t) },
         iso(date, time) { return date ? `${date}T${time || '00:00'}:00` : undefined },
         async submit() {
