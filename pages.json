@@ -1,0 +1,115 @@
+{
+    "pages": [
+        {
+            "path": "pages/home/home",
+            "style": { "navigationBarTitleText": "环星骑行", "navigationStyle": "custom", "enablePullDownRefresh": true }
+        },
+        {
+            "path": "pages/activity/list",
+            "style": { "navigationBarTitleText": "全部活动", "enablePullDownRefresh": true }
+        },
+        {
+            "path": "pages/activity/detail",
+            "style": { "navigationBarTitleText": "活动详情", "navigationStyle": "custom" }
+        },
+        {
+            "path": "pages/points/points",
+            "style": { "navigationBarTitleText": "我的积分", "navigationStyle": "custom" }
+        },
+        {
+            "path": "pages/profile/profile",
+            "style": { "navigationBarTitleText": "我的", "navigationStyle": "custom" }
+        },
+        {
+            "path": "pages/agreement/sign",
+            "style": { "navigationBarTitleText": "骑行安全知情同意书" }
+        },
+        {
+            "path": "pages/login/login",
+            "style": { "navigationBarTitleText": "登录", "navigationStyle": "custom" }
+        },
+        {
+            "path": "pages/message/message",
+            "style": { "navigationBarTitleText": "消息" }
+        },
+        {
+            "path": "pages/checkin/checkin",
+            "style": { "navigationBarTitleText": "骑行打卡", "navigationStyle": "custom" }
+        },
+        {
+            "path": "pages/settings/settings",
+            "style": { "navigationBarTitleText": "设置" }
+        },
+        {
+            "path": "pages/points/records",
+            "style": { "navigationBarTitleText": "积分明细" }
+        },
+        {
+            "path": "pages/exchange/mall",
+            "style": { "navigationBarTitleText": "积分商城" }
+        },
+        {
+            "path": "pages/exchange/detail",
+            "style": { "navigationBarTitleText": "商品详情" }
+        },
+        {
+            "path": "pages/exchange/records",
+            "style": { "navigationBarTitleText": "兑换记录" }
+        },
+        {
+            "path": "pages/agreement/my",
+            "style": { "navigationBarTitleText": "我的协议" }
+        },
+        {
+            "path": "pages/album/list",
+            "style": { "navigationBarTitleText": "活动影像", "enablePullDownRefresh": false }
+        },
+        {
+            "path": "pages/album/detail",
+            "style": { "navigationBarTitleText": "相册" }
+        },
+        {
+            "path": "pages/content/list",
+            "style": { "navigationBarTitleText": "攻略与专栏" }
+        },
+        {
+            "path": "pages/content/detail",
+            "style": { "navigationBarTitleText": "内容详情" }
+        },
+        {
+            "path": "pages/feedback/feedback",
+            "style": { "navigationBarTitleText": "反馈投诉" }
+        },
+        {
+            "path": "pages/club/about",
+            "style": { "navigationBarTitleText": "俱乐部介绍" }
+        },
+        {
+            "path": "pages/leader/create",
+            "style": { "navigationBarTitleText": "发起活动" }
+        },
+        {
+            "path": "pages/leader/manage",
+            "style": { "navigationBarTitleText": "报名管理" }
+        }
+    ],
+    "tabBar": {
+        "color": "#a7b3ad",
+        "selectedColor": "#0e1a16",
+        "backgroundColor": "#ffffff",
+        "borderStyle": "white",
+        "list": [
+            { "pagePath": "pages/home/home", "text": "首页" },
+            { "pagePath": "pages/activity/list", "text": "活动" },
+            { "pagePath": "pages/checkin/checkin", "text": "打卡" },
+            { "pagePath": "pages/message/message", "text": "消息" },
+            { "pagePath": "pages/profile/profile", "text": "我的" }
+        ]
+    },
+    "globalStyle": {
+        "navigationBarTextStyle": "black",
+        "navigationBarTitleText": "环星骑行",
+        "navigationBarBackgroundColor": "#ffffff",
+        "backgroundColor": "#f4f7f6"
+    }
+}

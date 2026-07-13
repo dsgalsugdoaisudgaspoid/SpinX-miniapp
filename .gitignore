@@ -1,0 +1,12 @@
+# HBuilderX / uni-app 编译产物
+unpackage/
+.hbuilderx/
+
+# 依赖
+node_modules/
+
+# 系统 / 编辑器
+.DS_Store
+*.log
+.idea/
+.vscode/

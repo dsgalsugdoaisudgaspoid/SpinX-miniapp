@@ -1,0 +1,49 @@
+<script>
+import { guestToken } from '@/api/auth.js'
+
+export default {
+    onLaunch: function () {
+        // 冷启动：若无登录态，静默走游客令牌，保证首页/活动可浏览
+        const token = uni.getStorageSync('accessToken')
+        if (!token) {
+            guestToken().catch(() => {})
+        }
+    },
+    onShow: function () {},
+    onHide: function () {}
+}
+</script>
+
+<style lang="scss">
+/* 全局样式（各页面样式块中通过 uni.scss 自动获得 theme 变量） */
+@import './common/theme.scss';
+
+page {
+    background-color: $paper;
+    color: $ink;
+    font-size: 26rpx;
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+    line-height: 1.5;
+}
+
+view, text, scroll-view { box-sizing: border-box; }
+
+/* 通用工具类 */
+.row { display: flex; flex-direction: row; align-items: center; }
+.col { display: flex; flex-direction: column; }
+.between { justify-content: space-between; }
+.center { align-items: center; justify-content: center; }
+.flex1 { flex: 1; }
+.mono { font-family: 'DIN Alternate', 'SF Mono', Menlo, monospace; font-style: italic; }
+.ellipsis { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+.g-btn {
+    height: 96rpx; border-radius: 30rpx;
+    background: linear-gradient(120deg, $green, $green-deep);
+    color: #04140c; font-weight: 800; font-size: 30rpx;
+    display: flex; align-items: center; justify-content: center;
+}
+.g-btn--plain {
+    background: $green-soft; color: $green-deep;
+}
+</style>

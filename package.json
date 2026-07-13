@@ -1,0 +1,6 @@
+{
+    "name": "spinx-miniapp",
+    "version": "1.0.0",
+    "description": "Spin X 环星骑行俱乐部 · UniApp 微信小程序，对接 SpinXAPI 后端",
+    "private": true
+}
