@@ -23,9 +23,9 @@
         "setting" : { "urlCheck" : false, "es6" : true, "minified" : true, "postcss" : true },
         "usingComponents" : true,
         "permission" : {
-            "scope.userLocation" : { "desc" : "用于展示活动集合点与导航" }
+            "scope.userLocation" : { "desc" : "用于按城市展示骑行内容、活动签到核验与地点选取" }
         },
-        "requiredPrivateInfos" : [ "getLocation" ]
+        "requiredPrivateInfos" : [ "getLocation", "chooseLocation" ]
     },
     "vueVersion" : "3",
     "h5" : {

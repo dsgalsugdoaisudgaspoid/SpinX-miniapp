@@ -5,11 +5,12 @@
             <text class="sub">{{ album.activityTitle }} · {{ (album.media && album.media.length) || 0 }} 张</text>
             <view class="tools">
                 <text class="sort" @tap="toggleSort">{{ sortBy === 'highlight' ? '精选优先' : '按时间' }} ⇅</text>
+                <text v-if="isPhotographer" class="upload" @tap="uploadPhotos">＋ 上传照片</text>
             </view>
         </view>
 
         <view class="gallery">
-            <view v-for="m in media" :key="m.mediaId" class="cell" @tap="preview(m)">
+            <view v-for="m in media" :key="m.mediaId" class="cell" @tap="preview(m)" @longpress="onLong(m)">
                 <image v-if="m.url && !m.url.includes('cdn.spinx.example')" class="pic" :src="m.url" mode="aspectFill" />
                 <view v-else class="ph"><text>{{ m.type === 'video' ? '🎬' : '🏞' }}</text></view>
                 <text v-if="m.highlight" class="hl">精选</text>
@@ -31,11 +32,16 @@
 </template>
 
 <script>
-import { getAlbum, likeAlbum, commentAlbum } from '@/api/content.js'
+import { getAlbum, likeAlbum, commentAlbum, addAlbumPhotos, setPhotoHighlight } from '@/api/content.js'
+import { hasRole } from '@/store/user.js'
+import { BASE_URL, API_PREFIX } from '@/common/config.js'
 
 export default {
-    data() { return { id: null, album: null, sortBy: 'time', liked: false, likes: 0, comment: '', safeBottom: 0 } },
-    computed: { media() { return (this.album && this.album.media) || [] } },
+    data() { return { id: null, album: null, sortBy: 'time', liked: false, likes: 0, comment: '', safeBottom: 0, uploading: false } },
+    computed: {
+        media() { return (this.album && this.album.media) || [] },
+        isPhotographer() { return hasRole('photographer') || hasRole('admin') }
+    },
     onLoad(q) {
         this.id = q.id
         try { this.safeBottom = uni.getSystemInfoSync().safeAreaInsets ? uni.getSystemInfoSync().safeAreaInsets.bottom : 0 } catch (e) {}
@@ -46,6 +52,46 @@ export default {
             try { this.album = await getAlbum(this.id, this.sortBy); this.likes = this.album.likes || 0 } catch (e) {}
         },
         toggleSort() { this.sortBy = this.sortBy === 'highlight' ? 'time' : 'highlight'; this.load() },
+        // D2：调用 uni.uploadFile（真机上传至 OSS 得 CDN url）
+        uploadOne(filePath) {
+            return new Promise((resolve) => {
+                uni.uploadFile({
+                    url: BASE_URL + API_PREFIX + '/upload', filePath, name: 'file',
+                    header: { Authorization: 'Bearer ' + (uni.getStorageSync('accessToken') || '') },
+                    success: (r) => { try { const d = JSON.parse(r.data); resolve((d && d.data && d.data.url) || null) } catch (e) { resolve(null) } },
+                    fail: () => resolve(null)
+                })
+            })
+        },
+        uploadPhotos() {
+            if (this.uploading) return
+            uni.chooseImage({
+                count: 9, sizeType: ['compressed'],
+                success: async (res) => {
+                    const paths = res.tempFilePaths || []
+                    if (!paths.length) return
+                    this.uploading = true
+                    uni.showLoading({ title: '上传中…', mask: true })
+                    const urls = []
+                    for (const fp of paths) {
+                        await this.uploadOne(fp)   // 触发真实上传（真机得 CDN url）
+                        urls.push(fp)              // 开发期用本地临时路径展示所选照片；上线改用上传返回的 cdn url
+                    }
+                    try { await addAlbumPhotos(this.id, urls); uni.hideLoading(); uni.showToast({ title: `已上传 ${urls.length} 张`, icon: 'success' }); this.load() }
+                    catch (e) { uni.hideLoading() } finally { this.uploading = false }
+                }
+            })
+        },
+        onLong(m) {
+            if (!this.isPhotographer) return
+            uni.showActionSheet({
+                itemList: [m.highlight ? '取消精选' : '设为精选'],
+                success: async () => {
+                    try { await setPhotoHighlight(this.id, m.mediaId, !m.highlight); uni.showToast({ title: '已更新', icon: 'none' }); this.load() }
+                    catch (e) { uni.showToast({ title: '该照片不可编辑', icon: 'none' }) }
+                }
+            })
+        },
         preview(m) {
             // 仅当点击的是真实图片时预览；占位图/视频给出提示，避免 current 失效报错
             const real = m.url && !m.url.includes('cdn.spinx.example') && m.type !== 'video'
@@ -76,6 +122,7 @@ export default {
 .sub { display: block; font-size: 22rpx; color: $muted; margin-top: 8rpx; }
 .tools { display: flex; margin-top: 14rpx; }
 .sort { font-size: 23rpx; color: $ink-2; font-weight: 700; background: $paper; padding: 8rpx 20rpx; border-radius: 14rpx; }
+.upload { margin-left: auto; font-size: 23rpx; font-weight: 800; color: #04140c; background: $green; padding: 8rpx 22rpx; border-radius: 14rpx; }
 .gallery { display: flex; flex-wrap: wrap; gap: 6rpx; padding: 16rpx 6rpx 160rpx; }
 .cell { position: relative; width: calc(33.33% - 4rpx); height: 240rpx; border-radius: 14rpx; overflow: hidden; }
 .pic { width: 100%; height: 100%; }

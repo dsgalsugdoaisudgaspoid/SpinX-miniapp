@@ -7,7 +7,7 @@
                 <view class="doc warn2">📝</view>
                 <view class="mid">
                     <text class="t">{{ a.title }}</text>
-                    <text class="sub mono">{{ a.version }} · 需阅读 {{ a.requiredReadingSeconds || 30 }}s</text>
+                    <text class="sub mono">{{ a.version }} · 需阅读 {{ a.requiredReadingSeconds || 5 }}s</text>
                 </view>
                 <text class="act">去签署 ›</text>
             </view>

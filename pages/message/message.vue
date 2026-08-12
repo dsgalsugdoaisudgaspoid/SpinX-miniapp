@@ -46,7 +46,16 @@ export default {
         },
         async open(n) {
             if (!n.read) { try { await request({ url: `/notifications/${n.id}/read`, method: 'PUT' }); n.read = true } catch (e) {} }
-            if (n.relatedId && n.category === 'activity') uni.navigateTo({ url: '/pages/activity/detail?id=' + n.relatedId })
+            switch (n.category) {
+                case 'activity':
+                    uni.navigateTo({ url: n.relatedId ? '/pages/activity/detail?id=' + n.relatedId : '/pages/activity/mine' }); break
+                case 'point':
+                    uni.navigateTo({ url: '/pages/points/records' }); break
+                case 'album':
+                    uni.navigateTo({ url: '/pages/album/list' }); break
+                default: // 公告 / 系统：无独立详情页，弹层展示全文
+                    uni.showModal({ title: n.title, content: n.content, showCancel: false, confirmText: '知道了' })
+            }
         },
         async readAll() {
             try { await request({ url: '/notifications/read-all', method: 'PUT' }); this.list.forEach(n => n.read = true); uni.showToast({ title: '已全部已读', icon: 'none' }) } catch (e) {}

@@ -25,6 +25,19 @@ export function updatePhone(payload) {
     return request({ url: '/user/phone', method: 'PUT', data: payload })
 }
 
+/** 信誉分（含记录）。 */
+export function getCredit() {
+    return request({ url: '/user/credit' })
+}
+
+/** 安全档案（紧急联系人 / 健康信息 / 保单号）。 */
+export function getSafetyProfile() {
+    return request({ url: '/user/safety-profile' })
+}
+export function updateSafetyProfile(payload) {
+    return request({ url: '/user/safety-profile', method: 'PUT', data: payload, loading: true })
+}
+
 /** 我的动态（接口 3.8）。 */
 export function myPosts(params = {}) {
     return request({ url: '/user/posts', data: params })

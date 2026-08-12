@@ -8,21 +8,21 @@
 // 品牌与强调
 $green:       #12d07a;   // Spin 绿：唯一行动强调色
 $green-deep:  #0ba968;
-$green-soft:  #e6f9f0;
+$green-soft:  #eaf8f1;   // 更清透的浅绿
 
 // 夜墨（品牌底 / 海报 / 夜骑）
 $night-1:     #0e1b24;
 $night-2:     #123a57;
 $night-3:     #0a5c86;
 
-// 文字与中性（带轻微冷绿偏）
-$ink:         #0e1a16;   // 主文字
-$ink-2:       #33433c;
-$muted:       #7a8a83;   // 次要文字
-$faint:       #a7b3ad;   // 占位/禁用
-$line:        #e9edeb;   // 描边
-$hair:        #f0f3f2;   // 更浅分隔
-$paper:       #f4f7f6;   // 页面底
+// 文字与中性（整体柔化，更轻松透气）
+$ink:         #17231e;   // 主文字：柔墨（不再近纯黑）
+$ink-2:       #4b584f;   // 次要文字：更轻
+$muted:       #8a948d;   // 次级文字：更淡
+$faint:       #b4bdb8;   // 占位/禁用：更淡
+$line:        #edf0ee;   // 描边：更轻的发丝线
+$hair:        #f4f7f5;   // 分隔：几近无形
+$paper:       #f5f8f6;   // 页面底：更干净透气
 $card:        #ffffff;
 
 // 语义色（与强调色分离）

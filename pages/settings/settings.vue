@@ -39,7 +39,8 @@
             <view class="frow"><text class="fk flex1">活动提醒</text><switch :checked="notify.activityReminder" color="#12d07a" data-key="activityReminder" @change="saveNotify" /></view>
             <view class="frow"><text class="fk flex1">积分变动</text><switch :checked="notify.pointChange" color="#12d07a" data-key="pointChange" @change="saveNotify" /></view>
             <view class="frow"><text class="fk flex1">相册更新</text><switch :checked="notify.albumUpdate" color="#12d07a" data-key="albumUpdate" @change="saveNotify" /></view>
-            <view class="frow noline"><text class="fk flex1">官方公告</text><switch :checked="notify.officialAnnouncement" color="#12d07a" data-key="officialAnnouncement" @change="saveNotify" /></view>
+            <view class="frow"><text class="fk flex1">官方公告</text><switch :checked="notify.officialAnnouncement" color="#12d07a" data-key="officialAnnouncement" @change="saveNotify" /></view>
+            <view class="frow noline" @tap="enableSubscribe"><text class="fk flex1">微信订阅提醒</text><text class="fv">报名·审核·提醒·开奖</text><text class="arw">›</text></view>
         </view>
 
         <!-- 账号 -->
@@ -52,6 +53,13 @@
             </view>
         </view>
 
+        <!-- 协议与账号 -->
+        <view class="group">
+            <view class="gh">协议与账号</view>
+            <view class="frow" @tap="goPolicies"><text class="fk flex1">协议与政策</text><text class="fv">用户协议 · 隐私政策</text><text class="arw">›</text></view>
+            <view class="frow noline" @tap="deactivate"><text class="fk flex1 danger">注销账号</text><text class="arw">›</text></view>
+        </view>
+
         <view class="save" @tap="saveProfile">保存资料</view>
         <view class="safe-bottom"></view>
     </view>
@@ -59,6 +67,9 @@
 
 <script>
 import { getProfile, updateProfile, updatePrivacy, updateNotificationSettings, updatePhone } from '@/api/user.js'
+import { deactivateAccount } from '@/api/auth.js'
+import { requestSubscribe } from '@/common/subscribe.js'
+import { SUBSCRIBE_TEMPLATES } from '@/common/config.js'
 
 export default {
     data() {
@@ -115,6 +126,38 @@ export default {
             updatePhone({ code: d.code, encryptedData: d.encryptedData, iv: d.iv })
                 .then(() => { uni.showToast({ title: '手机号已更新', icon: 'success' }); this.load() })
                 .catch(() => {})
+        },
+        async enableSubscribe() {
+            const r = await requestSubscribe(Object.keys(SUBSCRIBE_TEMPLATES))
+            if (r && r.skipped) uni.showModal({ title: '订阅提醒', content: '订阅消息模板尚未在小程序后台配置，上线后可开启报名、开奖、活动提醒等一次性通知。', showCancel: false })
+            else if (r && r.accepted && r.accepted.length) uni.showToast({ title: '已开启 ' + r.accepted.length + ' 项提醒', icon: 'none' })
+            else uni.showToast({ title: '未开启提醒', icon: 'none' })
+        },
+        goPolicies() { uni.navigateTo({ url: '/pages/agreement/policies' }) },
+        deactivate() {
+            uni.showModal({
+                title: '注销账号',
+                content: '注销后账号内积分、成绩、协议存档等将被清除且不可恢复。建议先阅读《账号注销须知》。',
+                confirmText: '继续注销', confirmColor: '#e0533d', cancelText: '查看须知',
+                success: (r) => {
+                    if (r.cancel) { uni.navigateTo({ url: '/pages/agreement/view?id=6' }); return }
+                    if (r.confirm) this.confirmDeactivate()
+                }
+            })
+        },
+        confirmDeactivate() {
+            uni.showModal({
+                title: '再次确认', content: '确认注销当前账号？此操作不可恢复。',
+                confirmText: '确认注销', confirmColor: '#e0533d',
+                success: async (r) => {
+                    if (!r.confirm) return
+                    try {
+                        const d = await deactivateAccount('用户主动注销')
+                        uni.showToast({ title: (d && d.message) || '注销申请已受理', icon: 'none' })
+                        setTimeout(() => uni.reLaunch({ url: '/pages/home/home' }), 1500)
+                    } catch (e) {}
+                }
+            })
         }
     }
 }
@@ -130,6 +173,8 @@ export default {
 .fi { flex: 1; text-align: right; font-size: 27rpx; color: $ink; }
 .ph { color: $faint; }
 .fv { font-size: 25rpx; color: $muted; margin-right: 12rpx; }
+.arw { color: $faint; font-size: 32rpx; flex: none; }
+.danger { color: #e0533d; }
 .avatar { width: 76rpx; height: 76rpx; border-radius: 22rpx; margin-left: auto; background: linear-gradient(140deg, #5ecb8f, #0ba968); }
 .phonebtn { font-size: 22rpx; color: $green-deep; background: $green-soft; padding: 0 22rpx; height: 56rpx; line-height: 56rpx; border-radius: 16rpx; margin: 0; }
 .phonebtn::after { border: none; }

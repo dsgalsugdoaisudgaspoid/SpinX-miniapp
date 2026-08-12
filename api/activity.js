@@ -25,9 +25,14 @@ export function getRegistrations(activityId, params = {}) {
     return request({ url: `/activities/${activityId}/registrations`, data: params })
 }
 
-/** 活动签到（领队，接口 5.7）。 */
+/** 活动签到（领队扫码传 {code}，或会员自助 1km 签到，接口 5.7）。 */
 export function checkin(activityId, payload) {
     return request({ url: `/activities/${activityId}/checkin`, method: 'POST', data: payload })
+}
+
+/** 会员签发个人签到码（B6，带时效）。 */
+export function issueCheckinCode() {
+    return request({ url: '/checkin-code', method: 'POST' })
 }
 
 /** 审核报名（领队/管理员，接口 5.6）。action: approve/reject。 */
@@ -43,6 +48,21 @@ export function distributePoints(activityId, members) {
 /** 创建活动（领队，接口 5.13）。 */
 export function createActivity(payload) {
     return request({ url: '/activities', method: 'POST', data: payload, loading: true })
+}
+
+/** 赛后回填真实骑行数据（领队，C1）→ 写入参与者骑行档案与榜单。 */
+export function recordActivityData(activityId, payload) {
+    return request({ url: `/activities/${activityId}/record-data`, method: 'POST', data: payload, loading: true })
+}
+
+/** 活动改期（领队，B4）→ 群发通知。 */
+export function rescheduleActivity(activityId, payload) {
+    return request({ url: `/activities/${activityId}/reschedule`, method: 'POST', data: payload, loading: true })
+}
+
+/** 取消活动（领队，B4）→ 群发通知 + 自动退款。 */
+export function withdrawActivity(activityId, reason) {
+    return request({ url: `/activities/${activityId}/withdraw`, method: 'POST', data: { reason }, loading: true })
 }
 
 /** 分享活动获取积分（接口 4.5）。 */

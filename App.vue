@@ -1,5 +1,6 @@
 <script>
 import { guestToken } from '@/api/auth.js'
+import { ensureCityReady } from '@/store/city.js'
 
 export default {
     onLaunch: function () {
@@ -8,6 +9,9 @@ export default {
         if (!token) {
             guestToken().catch(() => {})
         }
+        // 尽早发起城市兜底请求（不 await，不阻塞启动）：只访问公开接口，不调用 uni.getLocation，
+        // 不会触发定位权限弹窗。真正的定位判定仍由 home.vue 的 initCity() 在用户看到首页时进行。
+        ensureCityReady()
     },
     onShow: function () {},
     onHide: function () {}

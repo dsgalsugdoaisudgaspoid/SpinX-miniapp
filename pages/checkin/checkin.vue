@@ -4,12 +4,12 @@
             <view class="stars"></view>
             <text class="bike">🚴</text>
             <text class="slogan">迎风出发，把自由踩出来</text>
-            <text class="sub">出发前在集合点向领队出示签到，全勤有额外积分</text>
+            <text class="sub">到达集合点后，在活动详情页一键定位签到，全勤有额外积分</text>
         </view>
 
-        <view class="scanwrap" v-if="isLeader">
-            <view class="g-btn scan" @tap="scan">扫码为会员签到（领队）</view>
-            <view class="createbtn" @tap="goCreate"><text class="ci2">🚩</text>发起新活动</view>
+        <view class="scanwrap">
+            <view class="g-btn scan" @tap="goToday">📍 定位签到 · 今天的活动</view>
+            <view v-if="isLeader" class="createbtn" @tap="goCreate"><text class="ci2">🚩</text>发起新活动</view>
         </view>
 
         <view class="sec">我报名的活动</view>
@@ -33,7 +33,6 @@
 
 <script>
 import { myActivities } from '@/api/user.js'
-import { checkin } from '@/api/activity.js'
 import { isLoggedIn, hasRole } from '@/store/user.js'
 import { fmtTime } from '@/common/util.js'
 
@@ -44,21 +43,38 @@ export default {
     onShow() { if (isLoggedIn()) this.load() },
     methods: {
         fmt(iso) { return fmtTime(iso) },
+        isToday(iso) { if (!iso) return false; const d = new Date(iso), n = new Date(); return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate() },
+        // 当日已报名、未取消、未完成的活动（用于自动跳转与「今天的活动」按钮）
+        todayActivity() {
+            return this.items.find(a => {
+                const s = a.myStatus || a.registrationStatus || a.activityStatus
+                return this.isToday(a.startTime) && s !== 'cancelled' && s !== 'completed'
+            })
+        },
         myStatus(a) { return { pending: '待审核', approved: '已通过', auto_approved: '待出发', upcoming: '待出发', in_progress: '进行中', completed: '已完成', cancelled: '已取消' }[a.myStatus || a.registrationStatus] || '待出发' },
         badgeBg(a) { const s = a.myStatus || a.registrationStatus; return s === 'completed' ? '#eef2f0' : (s === 'pending' ? '#fdf1dd' : '#e6f9f0') },
         badgeColor(a) { const s = a.myStatus || a.registrationStatus; return s === 'completed' ? '#7a8a83' : (s === 'pending' ? '#b8760a' : '#0ba968') },
         async load() {
             this.loading = true
-            try { const d = await myActivities({ page: 1, pageSize: 20 }); this.items = (d && d.list) || [] } catch (e) {} finally { this.loading = false }
+            try {
+                const d = await myActivities({ page: 1, pageSize: 20 }); this.items = (d && d.list) || []
+                this.maybeAutoOpen()
+            } catch (e) {} finally { this.loading = false }
         },
-        scan() {
-            uni.scanCode({
-                success: async (res) => {
-                    // 约定二维码内容形如 activityId:userId，演示直接提示
-                    uni.showToast({ title: '已扫码：' + (res.result || '').slice(0, 16), icon: 'none' })
-                },
-                fail: () => {}
-            })
+        // 当日有活动 → 直接进详情页提示定位签到，减少操作链路；每天只自动跳一次，避免来回切 tab 反复弹
+        maybeAutoOpen() {
+            const a = this.todayActivity()
+            if (!a) return
+            const today = new Date().toDateString()
+            if (uni.getStorageSync('autoCheckinOpenedDate') === today) return
+            uni.setStorageSync('autoCheckinOpenedDate', today)
+            uni.navigateTo({ url: '/pages/activity/detail?id=' + (a.activityId || a.id) + '&checkin=1' })
+        },
+        goToday() {
+            if (!isLoggedIn()) { uni.navigateTo({ url: '/pages/login/login' }); return }
+            const a = this.todayActivity()
+            if (!a) { uni.showToast({ title: '今天没有已报名的活动', icon: 'none' }); return }
+            uni.navigateTo({ url: '/pages/activity/detail?id=' + (a.activityId || a.id) + '&checkin=1' })
         },
         goDetail(a) { uni.navigateTo({ url: '/pages/activity/detail?id=' + (a.activityId || a.id) }) },
         goList() { uni.switchTab({ url: '/pages/activity/list' }) },

@@ -34,6 +34,14 @@
             <text class="gt">未成年会员需监护人线上代签补充协议，单独加密存档区分。</text>
         </view>
 
+        <!-- 签署前最后一道确认：阅读计时达标后才可勾选，避免跳过阅读直接签 -->
+        <view :class="['agree', canSign ? '' : 'dis']" @tap="toggleAgree">
+            <view :class="['box', agreedRead ? 'on' : '']">
+                <text v-if="agreedRead" class="ck">✓</text>
+            </view>
+            <text class="at">我已完整阅读本协议内容，并同意以上条款</text>
+        </view>
+
         <view class="footer" :style="{ paddingBottom: 'calc(24rpx + ' + safeBottom + 'px)' }">
             <view :class="['g-btn', submitDisabled ? 'off' : '']" @tap="submit">
                 ✍ 确认签署{{ activityId ? '并报名' : '' }}
@@ -51,8 +59,9 @@ export default {
     data() {
         return {
             agreementId: null, activityId: null,
-            agreement: null, required: 30, readSeconds: 0, timer: null,
-            ctx: null, hasInk: false, last: null, safeBottom: 0, submitting: false
+            agreement: null, required: 5, readSeconds: 0, timer: null,
+            ctx: null, hasInk: false, last: null, safeBottom: 0, submitting: false,
+            agreedRead: false
         }
     },
     computed: {
@@ -63,7 +72,7 @@ export default {
         },
         readPct() { return Math.min(100, Math.round((this.readSeconds / this.required) * 100)) },
         canSign() { return this.readSeconds >= this.required },
-        submitDisabled() { return !this.canSign || !this.hasInk || this.submitting }
+        submitDisabled() { return !this.canSign || !this.agreedRead || !this.hasInk || this.submitting }
     },
     onLoad(q) {
         this.agreementId = q.agreementId
@@ -91,6 +100,13 @@ export default {
             } catch (e) {}
         },
         onScroll() {},
+        toggleAgree() {
+            if (!this.canSign) {
+                uni.showToast({ title: `请先阅读满 ${this.required} 秒`, icon: 'none' })
+                return
+            }
+            this.agreedRead = !this.agreedRead
+        },
         start(e) {
             const p = e.touches[0]
             this.last = { x: p.x, y: p.y }
@@ -115,6 +131,7 @@ export default {
         submit() {
             if (this.submitDisabled) {
                 if (!this.canSign) uni.showToast({ title: `请阅读满 ${this.required} 秒`, icon: 'none' })
+                else if (!this.agreedRead) uni.showToast({ title: '请先勾选已阅读并同意', icon: 'none' })
                 else if (!this.hasInk) uni.showToast({ title: '请先手写签名', icon: 'none' })
                 return
             }
@@ -156,7 +173,7 @@ export default {
 .ver { display: flex; align-items: center; gap: 12rpx; margin-top: 16rpx; font-size: 22rpx; color: $muted; }
 .vb { font-family: 'SF Mono', Menlo, monospace; background: $paper; padding: 4rpx 14rpx; border-radius: 10rpx; color: $ink-2; }
 
-.readbox { margin: 24rpx 28rpx 0; background: $card; border-radius: 24rpx; padding: 28rpx; height: 300rpx; }
+.readbox { margin: 24rpx 28rpx 0; background: $card; border-radius: 24rpx; padding: 28rpx; height: 480rpx; }
 
 .timer { display: flex; align-items: center; gap: 16rpx; margin: 24rpx 32rpx 0; font-size: 22rpx; color: $muted; }
 .tprog { flex: 1; height: 12rpx; border-radius: 8rpx; background: $hair; overflow: hidden; }
@@ -171,6 +188,13 @@ export default {
 
 .guard { display: flex; align-items: center; gap: 14rpx; margin: 22rpx 28rpx 0; padding: 22rpx; border-radius: 20rpx; background: #fbf7e8; }
 .gi { font-size: 28rpx; } .gt { flex: 1; font-size: 22rpx; color: #8a6d1a; line-height: 1.5; }
+
+.agree { display: flex; align-items: center; gap: 14rpx; margin: 26rpx 28rpx 0; }
+.agree.dis { opacity: .5; }
+.box { width: 34rpx; height: 34rpx; border-radius: 8rpx; border: 3rpx solid $line; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.box.on { background: $green; border-color: $green; }
+.ck { color: #fff; font-size: 22rpx; font-weight: 800; }
+.at { flex: 1; font-size: 22rpx; color: $ink-2; line-height: 1.4; }
 
 .footer { padding: 28rpx 28rpx 0; margin-top: auto; }
 .g-btn.off { background: #d7ddda; color: #8a968f; }

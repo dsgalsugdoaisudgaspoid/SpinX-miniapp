@@ -1,5 +1,10 @@
 import { request } from '@/common/request.js'
 
+/** 协议与政策总览（协议中心）。 */
+export function allAgreements() {
+    return request({ url: '/agreements' })
+}
+
 /** 待签署协议（接口 6.1）。 */
 export function pendingAgreements() {
     return request({ url: '/agreements/pending' })

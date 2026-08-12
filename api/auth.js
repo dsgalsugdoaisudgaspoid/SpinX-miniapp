@@ -37,6 +37,13 @@ export async function logout(reason) {
     clearSession()
 }
 
+/** 账号注销（合规）。受理后清本地会话。 */
+export async function deactivateAccount(reason) {
+    const data = await request({ url: '/user/deactivate', method: 'POST', data: { reason }, loading: true })
+    clearSession()
+    return data
+}
+
 /** 游客转正注册（接口 3.11）。 */
 export function register(payload) {
     return request({ url: '/user/register', method: 'POST', data: payload, loading: true })
