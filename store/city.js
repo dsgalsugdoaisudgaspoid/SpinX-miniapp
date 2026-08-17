@@ -6,28 +6,28 @@
  *   - 'manual' 用户手动选的   → 之后定位不一致要先问用户，不擅自改他的选择
  */
 
-import { BRAND } from '@/common/config.js'
-import { listCities } from '@/api/city.js'
+import { BRAND } from "@/common/config.js";
+import { listCities } from "@/api/city.js";
 
-const CITY_KEY = 'spinx_city'
-const CITY_LIST_KEY = 'spinx_city_list'
+const CITY_KEY = "spinx_city";
+const CITY_LIST_KEY = "spinx_city_list";
 /** 本次会话已拒绝过的切城建议，避免反复弹窗骚扰（仅内存，重启即清）。 */
-const declined = {}
+const declined = {};
 /** ensureCityReady() 的单例 Promise：同一次冷启动内多个页面并发调用只发一次请求。 */
-let readyPromise = null
+let readyPromise = null;
 
 export function currentCity() {
-    return uni.getStorageSync(CITY_KEY) || null
+  return uni.getStorageSync(CITY_KEY) || null;
 }
 
 export function currentCityCode() {
-    const c = currentCity()
-    return c && c.code ? c.code : undefined
+  const c = currentCity();
+  return c && c.code ? c.code : undefined;
 }
 
 export function currentCityName() {
-    const c = currentCity()
-    return c && c.name ? c.name : ''
+  const c = currentCity();
+  return c && c.name ? c.name : "";
 }
 
 /**
@@ -38,41 +38,45 @@ export function currentCityName() {
  * 给武汉用户显示"我们扎根武汉"是错的。
  */
 export function displayCityName() {
-    return currentCityName() || BRAND.city
+  return currentCityName() || BRAND.city;
 }
 
 /** source: 'auto' | 'manual'。 */
 export function setCity(city, source) {
-    if (!city || !city.code) return
-    uni.setStorageSync(CITY_KEY, { code: city.code, name: city.name, source: source || 'auto' })
+  if (!city || !city.code) return;
+  uni.setStorageSync(CITY_KEY, {
+    code: city.code,
+    name: city.name,
+    source: source || "auto",
+  });
 }
 
 export function isManuallyChosen() {
-    const c = currentCity()
-    return !!(c && c.source === 'manual')
+  const c = currentCity();
+  return !!(c && c.source === "manual");
 }
 
 /** 缓存运营城市列表（选择器、就近判定、是否显示全国榜都要用）。 */
 export function cachedCityList() {
-    return uni.getStorageSync(CITY_LIST_KEY) || []
+  return uni.getStorageSync(CITY_LIST_KEY) || [];
 }
 
 export function cacheCityList(list) {
-    uni.setStorageSync(CITY_LIST_KEY, list || [])
+  uni.setStorageSync(CITY_LIST_KEY, list || []);
 }
 
 /** 是否已进驻多城——单城时隐藏切换入口、隐藏全国榜。 */
 export function isMultiCity() {
-    return cachedCityList().length >= 2
+  return cachedCityList().length >= 2;
 }
 
 /** 记住用户拒绝了切到某城的建议，本次启动内不再重复询问。 */
 export function markSwitchDeclined(code) {
-    if (code) declined[code] = true
+  if (code) declined[code] = true;
 }
 
 export function isSwitchDeclined(code) {
-    return !!declined[code]
+  return !!declined[code];
 }
 
 /**
@@ -92,25 +96,27 @@ export function isSwitchDeclined(code) {
  * 在发起请求前都应该先 `await ensureCityReady()`。
  */
 export function ensureCityReady() {
-    if (readyPromise) return readyPromise
-    readyPromise = (async () => {
-        if (currentCity()) return
-        let cities = cachedCityList()
-        if (!cities.length) {
-            try {
-                const d = await listCities()
-                if (d && Array.isArray(d.list) && d.list.length) {
-                    cities = d.list
-                    cacheCityList(cities)
-                }
-            } catch (e) { /* 走硬编码兜底 */ }
+  if (readyPromise) return readyPromise;
+  readyPromise = (async () => {
+    if (currentCity()) return;
+    let cities = cachedCityList();
+    if (!cities.length) {
+      try {
+        const d = await listCities();
+        if (d && Array.isArray(d.list) && d.list.length) {
+          cities = d.list;
+          cacheCityList(cities);
         }
-        if (currentCity()) return // 等待网络请求期间，别的调用方（如 home.vue）可能已经设置好了
-        if (cities.length) {
-            setCity(cities[0], 'auto')
-        } else if (BRAND.cityCode) {
-            setCity({ code: BRAND.cityCode, name: BRAND.city }, 'auto')
-        }
-    })()
-    return readyPromise
+      } catch (e) {
+        /* 走硬编码兜底 */
+      }
+    }
+    if (currentCity()) return; // 等待网络请求期间，别的调用方（如 home.vue）可能已经设置好了
+    if (cities.length) {
+      setCity(cities[0], "auto");
+    } else if (BRAND.cityCode) {
+      setCity({ code: BRAND.cityCode, name: BRAND.city }, "auto");
+    }
+  })();
+  return readyPromise;
 }

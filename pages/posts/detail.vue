@@ -1,9 +1,9 @@
 <template>
     <view class="pd" v-if="post">
         <view class="body">
-            <view class="ph">
+            <view class="ph" :data-uid="post.userId" @tap="goMember">
                 <view class="av" :style="{ backgroundImage: post.avatar ? ('url(' + post.avatar + ')') : '' }"></view>
-                <view class="who"><text class="nm">{{ post.nickname }}</text><text class="tm">{{ shortTime(post.createdAt) }}</text></view>
+                <view class="who"><text class="nm">{{ spx(post.nickname) }}</text><text class="tm">{{ shortTime(post.createdAt) }}</text></view>
             </view>
             <text class="ct" v-if="post.content">{{ post.content }}</text>
             <view class="imgs" v-if="post.images && post.images.length">
@@ -16,9 +16,9 @@
             </view>
 
             <view class="csec">评论 {{ (post.comments || []).length }}</view>
-            <view v-for="(c, i) in post.comments" :key="i" class="crow">
+            <view v-for="(c, i) in post.comments" :key="i" class="crow" :data-uid="c.userId" @tap="goMember">
                 <view class="cav"></view>
-                <view class="cmid"><text class="cn">{{ c.nickname }}</text><text class="cc">{{ c.content }}</text><text class="ctm">{{ shortTime(c.createdAt) }}</text></view>
+                <view class="cmid"><text class="cn">{{ spx(c.nickname) }}</text><text class="cc">{{ c.content }}</text><text class="ctm">{{ shortTime(c.createdAt) }}</text></view>
             </view>
             <view v-if="!(post.comments || []).length" class="cempty">还没有评论，来抢沙发～</view>
             <view class="safe-bottom"></view>
@@ -33,6 +33,7 @@
 
 <script>
 import { getPost, likePost, commentPost } from '@/api/post.js'
+import { spxName, goMemberProfile } from '@/common/util.js'
 
 export default {
     data() { return { id: null, post: null, comment: '', safeBottom: 0 } },
@@ -42,6 +43,8 @@ export default {
         this.load()
     },
     methods: {
+        spx(n) { return spxName(n) },
+        goMember(e) { goMemberProfile(e.currentTarget.dataset.uid) },
         shortTime(iso) { if (!iso) return ''; return iso.replace('T', ' ').slice(5, 16) },
         async load() { try { this.post = await getPost(this.id) } catch (e) {} },
         preview(e) { const urls = this.post.images || []; uni.previewImage({ urls, current: urls[+e.currentTarget.dataset.i] }) },

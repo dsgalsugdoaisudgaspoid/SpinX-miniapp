@@ -9,10 +9,10 @@
 
             <!-- 前三名领奖台 -->
             <view class="podium" v-if="top3.length">
-                <view v-for="(u, i) in top3" :key="u.userId" :class="['pod', 'p' + u.rank]">
+                <view v-for="(u, i) in top3" :key="u.userId" :class="['pod', 'p' + u.rank]" :data-uid="u.userId" @tap="goMember">
                     <view class="pav" :style="{ backgroundImage: u.avatar ? ('url(' + u.avatar + ')') : '' }"></view>
                     <text class="pmedal">{{ medal(u.rank) }}</text>
-                    <text class="pname ellipsis">{{ u.nickname }}</text>
+                    <text class="pname ellipsis">{{ spx(u.nickname) }}</text>
                     <text class="pkm mono">{{ u.distance }}<text class="unit">km</text></text>
                 </view>
             </view>
@@ -22,17 +22,17 @@
         <view class="mine" v-if="myRank">
             <text class="mrk mono">{{ myRank.rank <= 99 ? ('NO.' + myRank.rank) : '99+' }}</text>
             <view class="mav"></view>
-            <view class="mmid"><text class="mn">我 · {{ myRank.nickname }}</text><text class="ms">本月 {{ myRank.rides }} 场 · 累计 {{ myRank.distance }}km</text></view>
+            <view class="mmid"><text class="mn">我 · {{ spx(myRank.nickname) }}</text><text class="ms">本月 {{ myRank.rides }} 场 · 累计 {{ myRank.distance }}km</text></view>
             <text class="mtag">我的排名</text>
         </view>
 
         <!-- 完整榜单（第 4 名起） -->
         <view class="listbox">
             <view class="lhd"><text>完整榜单</text><text class="cnt">共 {{ totalRiders }} 位骑友上榜</text></view>
-            <view v-for="u in rest" :key="u.userId" class="row" :class="{ me: myRank && u.userId === myRank.userId }">
+            <view v-for="u in rest" :key="u.userId" class="row" :class="{ me: myRank && u.userId === myRank.userId }" :data-uid="u.userId" @tap="goMember">
                 <text class="rk mono">{{ u.rank }}</text>
                 <view class="rav" :style="{ backgroundImage: u.avatar ? ('url(' + u.avatar + ')') : '' }"></view>
-                <view class="rmid"><text class="rn ellipsis">{{ u.nickname }}</text><text class="rs">{{ u.rides }} 场活动</text></view>
+                <view class="rmid"><text class="rn ellipsis">{{ spx(u.nickname) }}</text><text class="rs">{{ u.rides }} 场活动</text></view>
                 <text class="rkm mono">{{ u.distance }}<text class="unit">km</text></text>
             </view>
             <view v-if="!loading && list.length === 0" class="empty">本月还没有骑行数据</view>
@@ -46,7 +46,7 @@
 
 <script>
 import { getRanking } from '@/api/home.js'
-import { statusBarHeight } from '@/common/util.js'
+import { statusBarHeight, spxName, goMemberProfile } from '@/common/util.js'
 import { isLoggedIn } from '@/store/user.js'
 
 export default {
@@ -62,6 +62,8 @@ export default {
     },
     onLoad() { this.statusBar = statusBarHeight(); this.load() },
     methods: {
+        spx(n) { return spxName(n) },
+        goMember(e) { goMemberProfile(e.currentTarget.dataset.uid) },
         medal(rank) { return rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '' },
         async load() {
             this.loading = true

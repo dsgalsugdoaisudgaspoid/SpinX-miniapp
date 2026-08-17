@@ -1,4 +1,4 @@
-import { MAP_KEY } from '@/common/config.js'
+import { MAP_KEY, BRAND } from '@/common/config.js'
 
 /** 状态栏高度（px），用于自定义导航栏顶部占位。 */
 export function statusBarHeight() {
@@ -53,14 +53,22 @@ export function stars(level) {
     return '★'.repeat(n) + '☆'.repeat(5 - n)
 }
 
+/** 展示层昵称前缀：给昵称统一带上品牌前缀（如 "SPX-张三"），只用于展示，不改数据本身。
+ *  可编辑的昵称输入框（如设置页改昵称）不要套用——那里要显示用户能编辑的原始值。 */
+export function spxName(nickname) {
+    if (!nickname) return nickname
+    return nickname.startsWith(BRAND.namePrefix) ? nickname : (BRAND.namePrefix + nickname)
+}
+
 /** 费用展示：0 → '免费'，否则 '¥30' */
 export function fmtFee(fee) {
     return (!fee || Number(fee) === 0) ? '免费' : '¥' + Number(fee)
 }
 
 /**
- * 逆地址解析（底层）：返回 { name, adcode, city } —— name 是道路级地名，adcode/city 来自
- * 腾讯返回的 ad_info，正是行政区划代码与城市名，用于判定用户当前所在城市。
+ * 逆地址解析（底层）：返回 { name, adcode, city } —— name 格式为「市 + 区 + 街道（+ 附近 POI 名）」，
+ * 比如「成都市武侯区人民南路四段（附近：果壳里的城）」，比坐标或单纯路口名更利于求助场景快速定位。
+ * adcode/city 来自腾讯返回的 ad_info，用于判定用户当前所在城市。
  * 依赖腾讯位置服务 Key（config.MAP_KEY）+ 小程序后台把 apis.map.qq.com 加入合法域名。
  * 未配置 Key 或请求失败时 resolve(null)，由调用方降级——不抛错、不打扰用户。
  */
@@ -70,15 +78,20 @@ export function reverseGeocodeDetail(lat, lng) {
         if (!key || lat == null || lng == null) { resolve(null); return }
         uni.request({
             url: 'https://apis.map.qq.com/ws/geocoder/v1/',
-            data: { location: lat + ',' + lng, key, get_poi: 0 },
+            // get_poi=1 才会带上附近 POI 列表，用于拼出「街道 + 附近建筑/商店名」
+            data: { location: lat + ',' + lng, key, get_poi: 1 },
             timeout: 6000,
             success: (res) => {
                 const r = res && res.data && res.data.result
                 if (!r) { resolve(null); return }
-                // recommend 通常是「某路与某路交叉口」级别，最贴近道路；退化到 address
-                const rec = r.formatted_addresses && r.formatted_addresses.recommend
                 const ad = r.ad_info || {}
-                resolve({ name: rec || r.address || null, adcode: ad.adcode ? String(ad.adcode) : null, city: ad.city || null })
+                // 市 + 区 + 街道：行政区划到街道级，缺哪级就跳过哪级，不留空占位
+                const district = [ad.city, ad.district, ad.street].filter(Boolean).join('')
+                const nearestPoi = r.pois && r.pois[0] && r.pois[0].title
+                let name = district || r.address || null
+                if (name && nearestPoi) name += `（附近：${nearestPoi}）`
+                if (!name) name = r.address || (r.formatted_addresses && r.formatted_addresses.recommend) || null
+                resolve({ name, adcode: ad.adcode ? String(ad.adcode) : null, city: ad.city || null })
             },
             fail: () => resolve(null)
         })
@@ -164,4 +177,21 @@ export function distanceMeters(lat1, lng1, lat2, lng2) {
     const a = Math.sin(dLat / 2) ** 2 +
         Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
     return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)))
+}
+
+/** 会员主页跳转前的页面栈安全深度：微信上限 10，留出余量。 */
+const MEMBER_STACK_LIMIT = 8
+
+/**
+ * 打开会员主页。全站头像/昵称的点击都走这里，保证行为一致，
+ * 也避免每个页面各写一份跳转 + 栈深判断。
+ *
+ * 会员之间可以顺着「骑行伙伴」一路点下去，栈接近上限时改用 redirect 覆盖当前页，
+ * 否则连续跳转会触发页面栈溢出，之后所有 navigateTo 都会失效。
+ */
+export function goMemberProfile(userId) {
+    if (userId === null || userId === undefined || userId === '') return
+    const url = '/pages/member/profile?userId=' + userId
+    if (getCurrentPages().length >= MEMBER_STACK_LIMIT) uni.redirectTo({ url })
+    else uni.navigateTo({ url })
 }

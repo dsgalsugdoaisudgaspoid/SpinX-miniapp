@@ -29,8 +29,8 @@
         <view class="winbox" v-if="info.recentWinners && info.recentWinners.length">
             <text class="wt">🎊 近期中奖</text>
             <view v-for="(w, i) in info.recentWinners" :key="i" class="wrow">
-                <text class="wn">{{ w.nickname }}</text>
-                <text class="wg">抽中 {{ w.prizeName }}</text>
+                <text class="wn">{{ spx(w.nickname) }}</text>
+                <text class="wg ellipsis flex1">抽中 {{ w.prizeName }}</text>
             </view>
         </view>
         <text class="foot">奖品由 SpinX 环星俱乐部提供 · 实物奖品到店领取</text>
@@ -40,7 +40,7 @@
 
 <script>
 import { lotteryInfo, lotteryDraw } from '@/api/lottery.js'
-import { statusBarHeight } from '@/common/util.js'
+import { statusBarHeight, spxName } from '@/common/util.js'
 import { isLoggedIn } from '@/store/user.js'
 
 export default {
@@ -56,6 +56,7 @@ export default {
     },
     onShow() { this.statusBar = statusBarHeight(); this.load() },
     methods: {
+        spx(n) { return spxName(n) },
         onCell(e) { if (String(e.currentTarget.dataset.center) === '1') this.draw() },
         async load() { try { const d = await lotteryInfo(); if (d) this.info = d } catch (e) {} },
         async draw() {

@@ -20,7 +20,7 @@
                     <view class="cloc"><text>📍</text><text class="ellipsis flex1">{{ e.meetingPoint || '集合点待定' }}</text></view>
                     <view class="cmetas">
                         <text class="pill" v-if="e.distance">{{ e.distance }}km</text>
-                        <text class="pill" v-if="e.companions && e.companions.length">与 {{ e.companions.map(c => c.nickname).join('、') }} 同行</text>
+                        <text class="pill" v-if="e.companions && e.companions.length">与 {{ e.companions.map(c => spx(c.nickname)).join('、') }} 同行</text>
                     </view>
                     <view class="ctags" v-if="e.feelingTags && e.feelingTags.length">
                         <text v-for="t in e.feelingTags" :key="t" class="tag">{{ t }}</text>
@@ -57,12 +57,13 @@
 
 <script>
 import { myJournal, updateJournalEntry } from '@/api/journal.js'
-import { fmtTime, statusBarHeight } from '@/common/util.js'
+import { fmtTime, statusBarHeight, spxName } from '@/common/util.js'
 
 export default {
     data() { return { statusBar: 20, items: [], loading: false, editingId: null, draftNote: '', draftPhotos: [] } },
     onShow() { this.statusBar = statusBarHeight(); this.load() },
     methods: {
+        spx(n) { return spxName(n) },
         back() { const p = getCurrentPages(); p.length > 1 ? uni.navigateBack() : uni.switchTab({ url: '/pages/profile/profile' }) },
         fmt(iso) { return fmtTime(iso) },
         async load() {

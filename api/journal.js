@@ -17,5 +17,5 @@ export function submitFeeling(activityId, tags) {
 
 /** 待总结的骑行：最近一场参与过但还没写收获的活动（供打开小程序弹窗）。后端未实现时静默降级。 */
 export function pendingReview() {
-    return request({ url: '/pending-review', silent: true })
+    return request({ url: '/journal/pending-review', silent: true })
 }

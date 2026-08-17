@@ -6,7 +6,7 @@
                 <view class="stars"></view>
                 <view class="nbtn" :style="{ top: (statusBar + 12) + 'px' }" @tap="back">‹</view>
                 <text class="htag">🏅 骑行纪念碑</text>
-                <text class="hname">{{ journey.nickname || '骑友' }}</text>
+                <text class="hname">{{ journey.nickname ? spx(journey.nickname) : '骑友' }}</text>
                 <text class="hsub">{{ journey.levelName || '入门骑行者' }} · 骑龄 {{ journey.ridingYears || 0 }} 年</text>
 
                 <view class="stat3">
@@ -77,7 +77,7 @@
 
 <script>
 import { getMonument, getAnnualReview } from '@/api/milestone.js'
-import { statusBarHeight } from '@/common/util.js'
+import { statusBarHeight, spxName } from '@/common/util.js'
 
 export default {
     data() {
@@ -98,6 +98,7 @@ export default {
         if (opts && opts.annual) this.pendingAnnual = Number(opts.annual)
     },
     methods: {
+        spx(n) { return spxName(n) },
         async load() {
             try {
                 const d = await getMonument()

@@ -3,7 +3,7 @@
         <view class="hero">
             <view class="stars"></view>
             <view class="av" :style="{ background: avatarBg }"></view>
-            <text class="nm">{{ coach.nickname }}</text>
+            <text class="nm">{{ spx(coach.nickname) }}</text>
             <text class="lvbadge" :style="lvStyle">{{ coach.levelLabel }}陪练</text>
             <view class="metrics">
                 <view class="m"><text class="mn mono">★{{ rating }}</text><text class="ml">评分</text></view>
@@ -37,7 +37,7 @@
         <!-- 预约弹层 -->
         <view v-if="showBook" class="mask" @tap="closeBook"></view>
         <view v-if="showBook" class="sheet" :style="{ paddingBottom: 'calc(20rpx + ' + safeBottom + 'px)' }" @tap.stop>
-            <view class="shd"><text class="sht">预约 {{ coach.nickname }}</text><text class="close" @tap="closeBook">✕</text></view>
+            <view class="shd"><text class="sht">预约 {{ spx(coach.nickname) }}</text><text class="close" @tap="closeBook">✕</text></view>
             <view class="frow"><text class="fk">日期</text><picker class="pk" mode="date" :value="date" @change="onDate"><text :class="['fv2', date ? '' : 'phc']">{{ date || '选择日期' }}</text></picker></view>
             <view class="frow"><text class="fk">时间</text><picker class="pk" mode="time" :value="time" @change="onTime"><text :class="['fv2', time ? '' : 'phc']">{{ time || '选择时间' }}</text></picker></view>
             <view class="frow"><text class="fk">时长</text>
@@ -64,6 +64,7 @@ import { getCoach, bookCoach, mockPayOrder } from '@/api/coach.js'
 import { levelStyle } from '@/common/coachLevel.js'
 import { isLoggedIn } from '@/store/user.js'
 import { displayCityName } from '@/store/city.js'
+import { spxName } from '@/common/util.js'
 
 export default {
     data() {
@@ -84,6 +85,7 @@ export default {
         this.load()
     },
     methods: {
+        spx(n) { return spxName(n) },
         money(v) { return v == null ? '—' : '¥' + Number(v) },
         async load() { try { this.coach = await getCoach(this.id) } catch (e) {} },
         openBook() {

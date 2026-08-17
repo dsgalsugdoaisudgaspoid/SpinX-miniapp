@@ -88,6 +88,18 @@
       "style": { "navigationBarTitleText": "我的称号", "navigationStyle": "custom" }
     },
     {
+      "path": "pages/identity/member-number",
+      "style": { "navigationBarTitleText": "我的学号", "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/member/profile",
+      "style": { "navigationBarTitleText": "学生证", "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/member/search",
+      "style": { "navigationBarTitleText": "找同学", "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/journal/list",
       "style": { "navigationBarTitleText": "骑行日记", "navigationStyle": "custom" }
     },
@@ -115,10 +127,6 @@
       }
     },
     {
-      "path": "pages/checkin/mycode",
-      "style": { "navigationBarTitleText": "我的签到码", "navigationStyle": "custom" }
-    },
-    {
       "path": "pages/settings/settings",
       "style": { "navigationBarTitleText": "设置" }
     },
@@ -129,14 +137,6 @@
     {
       "path": "pages/safety/incident",
       "style": { "navigationBarTitleText": "事故上报" }
-    },
-    {
-      "path": "pages/insurance/policies",
-      "style": { "navigationBarTitleText": "我的保单" }
-    },
-    {
-      "path": "pages/insurance/claim",
-      "style": { "navigationBarTitleText": "理赔指引" }
     },
     {
       "path": "pages/points/records",

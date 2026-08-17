@@ -14,12 +14,13 @@
         <scroll-view scroll-x class="leaderbar" v-if="!mine && leaders.length" show-scrollbar="false">
             <text class="lchip lbl">领队</text>
             <text :class="['lchip', leaderId === '' ? 'on' : '']" data-id="" @tap="switchLeader">全部</text>
-            <text v-for="l in leaders" :key="l.userId" :class="['lchip', leaderId === String(l.userId) ? 'on' : '']" :data-id="l.userId" @tap="switchLeader">{{ l.nickname }}</text>
+            <text v-for="l in leaders" :key="l.userId" :class="['lchip', leaderId === String(l.userId) ? 'on' : '']" :data-id="l.userId" @tap="switchLeader">{{ spx(l.nickname) }}</text>
         </scroll-view>
 
         <view class="items">
             <view v-for="a in items" :key="a.activityId || a.id" class="card" @tap="goDetail(a)">
                 <view class="poster">
+                    <image v-if="a.poster" class="pimg" :src="a.poster" mode="aspectFill" lazy-load></image>
                     <text class="ptag">{{ (a.tags && a.tags[0]) || (a.title && a.title.indexOf('夜') > -1 ? '夜骑' : '骑行') }}</text>
                     <text class="pstatus" :style="{ background: statusColor(a) }">{{ statusText(a) }}</text>
                 </view>
@@ -54,7 +55,7 @@ import { myActivities } from '@/api/user.js'
 import { listLeaders } from '@/api/leader.js'
 import { hasRole } from '@/store/user.js'
 import { currentCityCode, ensureCityReady } from '@/store/city.js'
-import { fmtTime, fmtFee } from '@/common/util.js'
+import { fmtTime, fmtFee, spxName } from '@/common/util.js'
 
 export default {
     data() {
@@ -92,6 +93,7 @@ export default {
     methods: {
         fmt(iso) { return fmtTime(iso) },
         feeStr(f) { return fmtFee(f) },
+        spx(n) { return spxName(n) },
         startOf(a) { return a.startTime },
         statusText(a) {
             const s = a.activityStatus || a.status
@@ -175,8 +177,9 @@ export default {
 .card { display: flex; gap: 22rpx; background: $card; border-radius: 30rpx; padding: 20rpx; box-shadow: inset 0 0 0 1rpx $hair; margin-bottom: 20rpx; }
 .poster { width: 190rpx; flex: none; border-radius: 22rpx; height: 240rpx; position: relative; overflow: hidden;
     background: linear-gradient(155deg, #0e1b24, #123a57, #0a5c86); padding: 16rpx; }
-.ptag { font-size: 18rpx; font-weight: 800; color: #fff; background: rgba(255,255,255,.18); padding: 4rpx 12rpx; border-radius: 10rpx; }
-.pstatus { position: absolute; bottom: 16rpx; left: 16rpx; font-size: 18rpx; font-weight: 800; color: #04140c; padding: 5rpx 14rpx; border-radius: 12rpx; }
+.pimg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+.ptag { position: relative; z-index: 1; font-size: 18rpx; font-weight: 800; color: #fff; background: rgba(255,255,255,.18); padding: 4rpx 12rpx; border-radius: 10rpx; }
+.pstatus { position: absolute; z-index: 1; bottom: 16rpx; left: 16rpx; font-size: 18rpx; font-weight: 800; color: #04140c; padding: 5rpx 14rpx; border-radius: 12rpx; }
 .info { flex: 1; min-width: 0; }
 .drow { display: flex; align-items: baseline; gap: 12rpx; }
 .dbig { font-weight: 800; font-size: 36rpx; letter-spacing: -1rpx; }

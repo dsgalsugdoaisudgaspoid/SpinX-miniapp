@@ -1,10 +1,18 @@
 <template>
     <view class="feed">
+        <!-- 找同学：社区页是「发现人」的自然入口（"我的动态"是自己的列表，就不展示了） -->
+        <view v-if="!mine" class="findbar" @tap="goFindMember">
+            <text class="fi">🔍</text>
+            <text class="ft flex1">输入学号，找到同学</text>
+            <text class="farw">›</text>
+        </view>
+
         <view class="items">
             <view v-for="p in items" :key="p.postId" class="card" :data-id="p.postId" @tap="goDetail">
-                <view class="ph">
+                <!-- 头像/昵称点击看 TA 的学生证；.stop 避免同时触发外层卡片的「看动态详情」 -->
+                <view class="ph" :data-uid="p.userId" @tap.stop="goMember">
                     <view class="av" :style="{ backgroundImage: p.avatar ? ('url(' + p.avatar + ')') : '' }"></view>
-                    <view class="who"><text class="nm">{{ p.nickname }}</text><text class="tm">{{ shortTime(p.createdAt) }}</text></view>
+                    <view class="who"><text class="nm">{{ spx(p.nickname) }}</text><text class="tm">{{ shortTime(p.createdAt) }}</text></view>
                 </view>
                 <text class="ct" v-if="p.content">{{ p.content }}</text>
                 <view class="imgs" v-if="p.images && p.images.length">
@@ -30,12 +38,16 @@
 <script>
 import { listPosts, myPosts, likePost } from '@/api/post.js'
 import { isLoggedIn } from '@/store/user.js'
+import { spxName, goMemberProfile } from '@/common/util.js'
 
 export default {
     data() { return { mine: false, items: [], loading: false } },
     onLoad(q) { this.mine = q && q.mine === '1'; if (this.mine) uni.setNavigationBarTitle({ title: '我的动态' }) },
     onShow() { this.load() },
     methods: {
+        spx(n) { return spxName(n) },
+        goMember(e) { goMemberProfile(e.currentTarget.dataset.uid) },
+        goFindMember() { uni.navigateTo({ url: '/pages/member/search' }) },
         shortTime(iso) { if (!iso) return ''; return iso.replace('T', ' ').slice(5, 16) },
         async load() {
             this.loading = true
@@ -55,6 +67,11 @@ export default {
 
 <style lang="scss" scoped>
 .feed { min-height: 100vh; background: $paper; }
+.findbar { display: flex; align-items: center; gap: 14rpx; margin: 20rpx 24rpx 0; background: $card;
+    border-radius: 22rpx; padding: 24rpx 26rpx; box-shadow: inset 0 0 0 1rpx $hair; }
+.fi { font-size: 28rpx; flex: none; }
+.ft { font-size: 25rpx; color: $muted; font-weight: 600; min-width: 0; }
+.farw { flex: none; color: $faint; font-size: 30rpx; }
 .items { padding: 20rpx 24rpx 40rpx; }
 .card { background: $card; border-radius: 28rpx; padding: 26rpx; box-shadow: inset 0 0 0 1rpx $hair; margin-bottom: 20rpx; }
 .ph { display: flex; align-items: center; gap: 16rpx; }

@@ -21,7 +21,7 @@
                 <view class="av" :style="{ background: avatarBg(c.coachId) }"></view>
                 <view class="mid">
                     <view class="l1">
-                        <text class="nm">{{ c.nickname }}</text>
+                        <text class="nm">{{ spx(c.nickname) }}</text>
                         <text class="lvbadge" :style="levelStyle(c.level)">{{ c.levelLabel }}</text>
                     </view>
                     <text class="intro ellipsis">{{ c.intro || '暂无介绍' }}</text>
@@ -50,6 +50,7 @@
 import { listCoaches } from '@/api/coach.js'
 import { currentCityCode, ensureCityReady } from '@/store/city.js'
 import { levelStyle } from '@/common/coachLevel.js'
+import { spxName } from '@/common/util.js'
 
 export default {
     data() {
@@ -68,6 +69,7 @@ export default {
     onReachBottom() { this.more() },
     methods: {
         levelStyle,
+        spx(n) { return spxName(n) },
         money(v) { return v == null ? '—' : '¥' + Number(v) },
         fmtRating(r) { return r == null ? '5.0' : Number(r).toFixed(1) },
         avatarBg(id) {

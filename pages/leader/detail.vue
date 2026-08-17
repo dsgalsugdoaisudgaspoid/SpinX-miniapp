@@ -6,7 +6,7 @@
             <view class="top">
                 <view class="av"></view>
                 <view class="who">
-                    <view class="nline"><text class="nick">{{ leader.nickname || '领队' }}</text><text class="title">{{ leader.title }}</text></view>
+                    <view class="nline"><text class="nick">{{ leader.nickname ? spx(leader.nickname) : '领队' }}</text><text class="title">{{ leader.title }}</text></view>
                     <text class="meta">🚲 骑龄 {{ leader.ridingYears }} 年 · 📍 {{ leader.city }}</text>
                 </view>
             </view>
@@ -52,12 +52,13 @@
 
 <script>
 import { getLeader } from '@/api/leader.js'
-import { statusBarHeight, fmtTime } from '@/common/util.js'
+import { statusBarHeight, fmtTime, spxName } from '@/common/util.js'
 
 export default {
     data() { return { statusBar: 20, id: '', leader: {}, activities: [], loading: false } },
     onLoad(q) { this.statusBar = statusBarHeight(); this.id = (q && q.id) || ''; this.load() },
     methods: {
+        spx(n) { return spxName(n) },
         fmt(iso) { return fmtTime(iso) },
         statusText(a) { return ({ upcoming: '报名中', ongoing: '进行中', completed: '已结束', cancelled: '已取消' })[a.status] || '报名中' },
         statusColor(a) {

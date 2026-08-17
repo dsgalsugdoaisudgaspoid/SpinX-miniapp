@@ -1,7 +1,10 @@
 <template>
     <view class="rrmask" v-if="show" @tap="skip">
         <view class="rrsheet" @tap.stop>
-            <text class="rrk">今天的骑行 · 一句话总结</text>
+            <view class="rrhd">
+                <text class="rrk">今天的骑行 · 一句话总结</text>
+                <brand-mark theme="light" width="72rpx"></brand-mark>
+            </view>
             <text class="rrt ellipsis">{{ pending.activityTitle }}</text>
 
             <text class="rrlabel">这次骑行，你的收获是？</text>
@@ -14,7 +17,7 @@
             <text class="rrcount">{{ note.length }}/60</text>
 
             <view class="rrgo" @tap="submit">记下这次骑行</view>
-            <text class="rrskip" @tap="skip">下次再说</text>
+            <text class="rrskip" @tap="skip">先不写了</text>
         </view>
     </view>
 </template>
@@ -22,9 +25,11 @@
 <script>
 import { submitFeeling, updateJournalEntry } from '@/api/journal.js'
 import { FEELING_OPTIONS } from '@/common/config.js'
+import BrandMark from '@/components/brand-mark/brand-mark.vue'
 
 export default {
     name: 'ride-review',
+    components: { BrandMark },
     props: {
         show: { type: Boolean, default: false },
         pending: { type: Object, default: () => ({}) }
@@ -59,6 +64,7 @@ export default {
 <style lang="scss" scoped>
 .rrmask { position: fixed; inset: 0; z-index: 60; background: rgba(9,20,15,.6); display: flex; align-items: flex-end; }
 .rrsheet { width: 100%; background: $card; border-radius: 34rpx 34rpx 0 0; padding: 36rpx 34rpx calc(30rpx + env(safe-area-inset-bottom)); }
+.rrhd { display: flex; align-items: center; justify-content: space-between; }
 .rrk { display: block; font-size: 20rpx; letter-spacing: 2rpx; color: $green-deep; font-weight: 800; }
 .rrt { display: block; font-size: 34rpx; font-weight: 800; margin-top: 10rpx; }
 .rrlabel { display: block; font-size: 25rpx; font-weight: 800; color: $ink; margin-top: 30rpx; }

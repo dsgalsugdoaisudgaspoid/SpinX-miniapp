@@ -13,7 +13,7 @@
                 <view class="av" :style="{ backgroundImage: l.avatar ? ('url(' + l.avatar + ')') : '' }"></view>
                 <view class="mid">
                     <view class="nline">
-                        <text class="nick">{{ l.nickname }}</text>
+                        <text class="nick">{{ spx(l.nickname) }}</text>
                         <text class="title">{{ l.title }}</text>
                     </view>
                     <view class="tags">
@@ -40,12 +40,13 @@
 <script>
 import { listLeaders } from '@/api/leader.js'
 import { currentCityCode, ensureCityReady } from '@/store/city.js'
-import { statusBarHeight } from '@/common/util.js'
+import { statusBarHeight, spxName } from '@/common/util.js'
 
 export default {
     data() { return { statusBar: 20, list: [], loading: false } },
     onLoad() { this.statusBar = statusBarHeight(); this.load() },
     methods: {
+        spx(n) { return spxName(n) },
         async load() {
             this.loading = true
             try {

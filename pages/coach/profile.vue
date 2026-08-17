@@ -4,7 +4,7 @@
             <view class="hero">
                 <view class="stars"></view>
                 <view class="av"></view>
-                <text class="nm">{{ profile.nickname }}</text>
+                <text class="nm">{{ spx(profile.nickname) }}</text>
                 <text class="lvbadge" :style="lvStyle">{{ profile.levelLabel }}陪练</text>
                 <text class="rate mono">{{ money(profile.hourlyRate) }}/小时</text>
             </view>
@@ -45,6 +45,7 @@
 <script>
 import { myCoachProfile } from '@/api/coach.js'
 import { levelStyle } from '@/common/coachLevel.js'
+import { spxName } from '@/common/util.js'
 
 export default {
     data() { return { profile: null } },
@@ -54,6 +55,7 @@ export default {
     },
     onShow() { this.load() },
     methods: {
+        spx(n) { return spxName(n) },
         money(v) { return v == null ? '—' : '¥' + Number(v) },
         async load() { try { this.profile = await myCoachProfile() } catch (e) { this.profile = null } },
         goOrders() { uni.navigateTo({ url: '/pages/coach/orders?tab=recv' }) },

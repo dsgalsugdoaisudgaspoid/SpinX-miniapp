@@ -27,9 +27,38 @@ export function addAlbumPhotos(albumId, urls) {
     return request({ url: `/albums/${albumId}/photos`, method: 'POST', data: { urls } })
 }
 
-/** 设 / 取消精选（D2）。 */
+/**
+ * 设 / 取消精选（D2）。
+ * 后端用 @RequestParam 取值，而 uni.request 的 PUT 会把 data 放进请求体、不会拼到 query 上，
+ * 所以这里必须自己拼 query——否则 false 传不过去，后端一律走 defaultValue=true（取消精选会失效）。
+ */
 export function setPhotoHighlight(albumId, mediaId, highlight) {
-    return request({ url: `/albums/${albumId}/photos/${mediaId}/highlight`, method: 'PUT', data: { highlight } })
+    return request({ url: `/albums/${albumId}/photos/${mediaId}/highlight?highlight=${highlight ? 'true' : 'false'}`, method: 'PUT' })
+}
+
+/**
+ * 给照片加 / 撤 SpinX 品牌水印。加水印会生成副本，原图由后端保留，可随时撤销。
+ * 同 setPhotoHighlight，参数必须走 query 而不是请求体。
+ */
+export function setPhotoWatermark(albumId, mediaId, enabled = true) {
+    return request({ url: `/albums/${albumId}/media/${mediaId}/watermark?enabled=${enabled ? 'true' : 'false'}`, method: 'PUT' })
+}
+
+/* ---------- 影像 AI 风格化 ---------- */
+
+/** 风格预设列表，同时返回功能是否开启（未配服务商时 available=false）。 */
+export function listAiStyles() {
+    return request({ url: '/ai-image/styles' })
+}
+
+/** 提交风格化任务，立刻返回 taskId，需轮询 getAiTask 取结果。 */
+export function submitAiStylize(albumId, mediaId, styleKey) {
+    return request({ url: `/ai-image/albums/${albumId}/media/${mediaId}`, method: 'POST', data: { styleKey } })
+}
+
+/** 查询风格化任务状态：pending / running / succeeded / failed。 */
+export function getAiTask(taskId) {
+    return request({ url: `/ai-image/tasks/${taskId}` })
 }
 
 /* ---------- 图文内容（接口 7.12 / 10.3） ---------- */

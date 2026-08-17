@@ -7,29 +7,34 @@
         </view>
 
         <scroll-view scroll-y class="scroll">
-            <!-- 夜色封面 -->
+            <!-- 夜色封面：有宣传图时轮播裁切填满（不完整展示原图），没有则用渐变兜底 -->
             <view class="cover" :style="{ paddingTop: (statusBar + 44) + 'px' }">
-                <view class="grain"></view>
+                <swiper v-if="promoImages.length" class="coverswiper" :autoplay="promoImages.length > 1"
+                    :circular="promoImages.length > 1" interval="4000" duration="400" @change="onCoverSwiper">
+                    <swiper-item v-for="(im, i) in promoImages" :key="i">
+                        <image class="coverimg" :src="im" mode="aspectFill" :data-i="i" :data-src="im" @tap="previewPromo" @error="onPromoError"></image>
+                    </swiper-item>
+                </swiper>
+                <view v-else class="grain"></view>
+                <view v-if="promoImages.length" class="coverscrim"></view>
+                <brand-mark class="pmark" :style="{ top: (statusBar + 56) + 'px' }" width="90rpx"></brand-mark>
                 <view class="cmeta">
-                    <text class="cvol">骑行 vol.113</text>
-                    <text class="cline">{{ range }} · 费用 {{ feeStr }}（含保险）</text>
+                    <text class="cvol ellipsis">{{ act.title }}</text>
+                    <text class="cline ellipsis">{{ range }}<text v-if="subtitle"> · {{ subtitle }}</text></text>
                 </view>
-                <text class="cbike">🚴</text>
-                <view class="dots"><view class="dot on"></view><view class="dot"></view><view class="dot"></view></view>
+                <text v-if="!promoImages.length" class="cbike">🚴</text>
+                <view v-if="promoImages.length > 1" class="dots">
+                    <view v-for="(im, i) in promoImages" :key="i" :class="['dot', coverIndex === i ? 'on' : '']"></view>
+                </view>
+                <view v-else-if="!promoImages.length" class="dots"><view class="dot on"></view><view class="dot"></view><view class="dot"></view></view>
             </view>
 
             <view class="sheet">
-                <text class="title">🚴 {{ act.title }}</text>
-                <view class="subline">
-                    <text class="badge-ins">🛡 意外保障</text>
-                    <text class="tg ellipsis flex1">{{ subtitle }}</text>
-                </view>
-
-                <!-- 信息卡 -->
+                <!-- 名称/时间/类型已经在封面图上展示过，这里不再重复披露 -->
                 <view class="infocard">
-                    <view class="irow">
-                        <text class="iic">🕘</text>
-                        <view><text class="ik">活动时间</text><text class="iv">{{ range }}</text></view>
+                    <view class="irow" v-if="act.distance || act.elevation">
+                        <text class="iic">🚵</text>
+                        <view><text class="ik">路线信息</text><text class="iv">{{ routeStatsText }}</text></view>
                     </view>
                     <view class="irow bt">
                         <text class="iic">📍</text>
@@ -50,6 +55,15 @@
                             </view>
                         </view>
                     </view>
+                    <!-- 路书码表：可同时绑定多个平台，领队在报名管理里随时补录/修改，未绑定时不展示 -->
+                    <view v-for="(l, i) in (act.routeLinks || [])" :key="i" class="irow bt" :data-ext="l.externalId" @tap="copyRouteId">
+                        <text class="iic">📊</text>
+                        <view class="flex1">
+                            <text class="ik">路书 · {{ l.brand }}</text>
+                            <text class="iv ellipsis">{{ l.externalId || '未填 ID' }}</text>
+                        </view>
+                        <text v-if="l.externalId" class="routecopy">复制</text>
+                    </view>
                 </view>
 
                 <!-- 积分提示 -->
@@ -57,13 +71,6 @@
                     <text>🎯 全程参与可得</text>
                     <text class="pv mono">+{{ (act.userPoints.basePoints||0) + (act.userPoints.fullAttendanceBonus||0) }}</text>
                     <text>积分（基础 {{ act.userPoints.basePoints }} + 全勤 {{ act.userPoints.fullAttendanceBonus }}）</text>
-                </view>
-
-                <!-- 意外保障 -->
-                <view class="insline" @tap="goInsurance">
-                    <text class="insi">🛡</text>
-                    <text class="inst">本场含骑行意外险 · 报名后自动生效</text>
-                    <text class="insarw">我的保单 ›</text>
                 </view>
 
                 <!-- 收获标签（3.9，替代五星评价） -->
@@ -86,12 +93,12 @@
                 <view class="howto" v-if="act.leader">
                     <view class="role">
                         <text class="rk">主领队</text>
-                        <text class="who">@{{ act.leader.nickname }}</text>
+                        <text class="who" :data-uid="act.leader.userId" @tap="goMember">@{{ spx(act.leader.nickname) }}</text>
                         <text class="rchip lead">领队</text>
                     </view>
                     <view class="role" v-for="c in (act.coLeaders||[])" :key="c.userId">
                         <text class="rk">副领队</text>
-                        <text class="who">@{{ c.nickname }}</text>
+                        <text class="who" :data-uid="c.userId" @tap="goMember">@{{ spx(c.nickname) }}</text>
                         <text class="rchip">签到 · 名单</text>
                     </view>
                 </view>
@@ -100,9 +107,9 @@
                 <view class="amb" v-if="(act.ambassadors||[]).length">
                     <text class="ambt">📣 本场城市小小宣传官</text>
                     <view class="amblist">
-                        <view v-for="p in act.ambassadors" :key="p.userId" class="ambitem">
+                        <view v-for="p in act.ambassadors" :key="p.userId" class="ambitem" :data-uid="p.userId" @tap="goMember">
                             <view class="ambav" :style="{ backgroundImage: p.avatar ? ('url(' + p.avatar + ')') : '' }"></view>
-                            <text class="ambn ellipsis">{{ p.nickname }}</text>
+                            <text class="ambn ellipsis">{{ spx(p.nickname) }}</text>
                         </view>
                     </view>
                 </view>
@@ -110,6 +117,21 @@
 
                 <view class="risk" v-if="act.riskNotice">
                     <text class="ri">⚠️</text><text class="rt">{{ act.riskNotice }}</text>
+                </view>
+
+                <!-- 保险提示：俱乐部不统一投保，固定提示，不受单场活动配置影响 -->
+                <view class="insnotice">
+                    <text class="ri">🛡️</text><text class="rt">本活动不含商业保险，请自行购买骑行意外险 / 人身意外险后再参与</text>
+                </view>
+
+                <!-- 取消报名：已签到/活动已结束不再展示；距开始不足 24 小时禁用并说明原因 -->
+                <view v-if="canCancelEntry" :class="['cancelentry', cancelWindowOpen ? '' : 'off']" @tap="onCancelRegistration">
+                    <text class="le-i">✕</text>
+                    <view class="le-t">
+                        <text class="le-t1">{{ act.paymentPending ? '放弃本次报名' : '取消报名' }}</text>
+                        <text class="le-t2">{{ act.paymentPending ? '取消这笔待支付订单，不再占用名额' : (cancelWindowOpen ? '取消后名额释放' : '距活动开始不足 24 小时，暂不支持取消') }}</text>
+                    </view>
+                    <text v-if="cancelWindowOpen" class="le-arw">›</text>
                 </view>
 
                 <view v-if="isLeader" class="leadentry" @tap="goManage">
@@ -131,13 +153,17 @@
 
         <!-- 底部 CTA -->
         <view class="cta" :style="{ paddingBottom: 'calc(24rpx + ' + safeBottom + 'px)' }">
-            <view class="qa" @tap="share"><text class="qi">↗</text><text>分享</text></view>
+            <button class="qa" open-type="share"><text class="qi">↗</text><text>分享</text></button>
             <!-- 已报名：签到 + 加群二维码 -->
             <block v-if="act.isRegistered">
-                <view :class="['go2', act.isCheckedIn ? 'done' : '']" @tap="onCheckin">
-                    <text class="gt">{{ act.isCheckedIn ? '已签到 ✓' : '签到' }}</text>
-                </view>
-                <view class="go2 group" @tap="showGroupQr">
+                <!-- 已签到：状态展示 -->
+                <view v-if="act.isCheckedIn" class="go2 done"><text class="gt">已签到 ✓</text></view>
+                <!-- 积分已发放/活动已结束：关闭签到 -->
+                <view v-else-if="activityEnded" class="go2 off"><text class="gt">活动已结束</text></view>
+                <!-- 仅活动开始起 1 小时内可签到，不在窗内则禁用并说明 -->
+                <view v-else :class="['go2', checkinWindowOpen ? '' : 'off']" @tap="onCheckin"><text class="gt">{{ checkinBtnText }}</text></view>
+                <!-- 加群二维码：活动结束后不可再加群 -->
+                <view v-if="act.groupQrcode && !activityEnded" class="go2 group" @tap="showGroupQr">
                     <text class="gi2">👥</text><text class="gt">加群二维码</text>
                 </view>
             </block>
@@ -156,7 +182,7 @@
         <!-- 加群二维码弹层 -->
         <view class="qrmask" v-if="qrShow" @tap="closeQr">
             <view class="qrbox" @tap.stop>
-                <text class="qrt">{{ act.groupName || '加入本场骑行群' }}</text>
+                <text class="qrt">加入本场骑行群</text>
                 <text class="qrsub">报名成功 · 扫码进群，领队会在群里同步集合与发车信息</text>
                 <image class="qrimg" :src="act.groupQrcode" mode="aspectFit" show-menu-by-longpress></image>
                 <text class="qrh">长按二维码保存 / 识别进群</text>
@@ -169,9 +195,9 @@
             <view class="sosbox" @tap.stop>
                 <text class="sosttl">🆘 求助已发出</text>
                 <text class="sostip">领队与俱乐部值班人员已收到你的求助{{ sosResult.hasLoc ? '与实时位置' : '' }}。情况危急请立即拨打 120。</text>
-                <view class="sosrow">
+                <view class="sosrow" :class="{ tap: sosResult.lat != null }" @tap="viewSosLocation">
                     <text class="sosk">你的当前位置</text>
-                    <text class="sosv">{{ sosResult.locName }}</text>
+                    <text class="sosv">{{ sosResult.locName }}<text v-if="sosResult.lat != null" class="sosmap"> 🗺 查看地图</text></text>
                 </view>
                 <view class="sosrow">
                     <text class="sosk">本场领队</text>
@@ -191,25 +217,38 @@ import { sendSOS } from '@/api/safety.js'
 import { payOrder } from '@/api/order.js'
 import { submitFeeling } from '@/api/journal.js'
 import { requestSubscribe } from '@/common/subscribe.js'
-import { statusBarHeight, fmtRange, fmtFee, distanceMeters, fmtTime, isDevtools, reverseGeocode } from '@/common/util.js'
-import { isLoggedIn, hasRole } from '@/store/user.js'
+import { statusBarHeight, fmtRange, fmtFee, distanceMeters, fmtTime, isDevtools, reverseGeocode, spxName, goMemberProfile } from '@/common/util.js'
+import { isLoggedIn, hasRole, currentUser } from '@/store/user.js'
 import RaffleBoard from '@/components/raffle-board/raffle-board.vue'
+import BrandMark from '@/components/brand-mark/brand-mark.vue'
 import SafeMap from '@/components/safe-map/safe-map.vue'
 import { FEELING_OPTIONS } from '@/common/config.js'
 
 export default {
-    components: { RaffleBoard, SafeMap },
+    components: { RaffleBoard, SafeMap, BrandMark },
     data() {
         return {
             statusBar: 20, safeBottom: 0, id: null, act: null, registering: false, qrShow: false, checkingIn: false,
             feelingOptions: FEELING_OPTIONS, selectedFeelings: [], feelingSubmitting: false, feelingJustSubmitted: false,
-            sosResult: null, sosing: false, autoCheckin: false, checkinPrompted: false
+            sosResult: null, sosing: false, autoCheckin: false, checkinPrompted: false, promoBroken: [], coverIndex: 0
         }
     },
     computed: {
         range() { return this.act ? fmtRange(this.act.startTime, this.act.endTime) : '' },
         feeStr() { return this.act ? fmtFee(this.act.fee) : '' },
         subtitle() { return this.act && this.act.tags ? this.act.tags.join(' · ') : '骑行' },
+        routeStatsText() {
+            const parts = []
+            if (this.act.distance) parts.push(this.act.distance + 'km')
+            if (this.act.elevation) parts.push('爬升 ' + this.act.elevation + 'm')
+            return parts.join(' · ') || '—'
+        },
+        // 过滤掉空字符串/非字符串脏数据，以及加载失败（URL 不可达，如上传残留的临时路径）的图。
+        // 不然数组"非空但没有可显示的图"时，画廊会占位渲染出一片空白——@error 回填 promoBroken 后这里自动剔除，画廊随之收起。
+        promoImages() {
+            return ((this.act && this.act.routeImages) || [])
+                .filter(u => typeof u === 'string' && u.trim() && this.promoBroken.indexOf(u) === -1)
+        },
         hasGeo() { return this.act && this.act.meetingLatitude && this.act.meetingLongitude },
         lat() { return Number(this.act.meetingLatitude) },
         lng() { return Number(this.act.meetingLongitude) },
@@ -218,6 +257,12 @@ export default {
             return [{ id: 1, latitude: this.lat, longitude: this.lng, width: 30, height: 30, callout: { content: '集合地点', display: 'ALWAYS', padding: 6, borderRadius: 6 } }]
         },
         isLeader() { return hasRole('leader') || hasRole('admin') },
+        // 本场活动的主领队本人——不是"有没有领队角色"，是"是不是这一场的领队"。主领队不能取消报名
+        // （后端也会拦），退出活动只能走转让主领队资格
+        isMainLeader() {
+            const me = currentUser()
+            return !!(this.act && this.act.leader && me && this.act.leader.userId === me.userId)
+        },
         avatarCount() { return Math.min(5, this.act ? (this.act.currentParticipants || 0) : 0) || 1 },
         leftText() {
             if (!this.act) return ''
@@ -229,8 +274,42 @@ export default {
             const s = this.act.status
             return s === 'completed' || s === 'cancelled' || s === 'withdrawn'
         },
+        // 积分已发放（或状态已完成/取消/下架）即视为活动结束：关闭签到、加群、SOS
+        activityEnded() {
+            if (!this.act) return false
+            const s = this.act.status
+            return !!(this.act.pointsSettled || s === 'completed' || s === 'cancelled' || s === 'withdrawn')
+        },
+        // 活动开始时间的时间戳（兼容 iOS：把 "2026-08-13T10:47:00" 归一成 "2026/08/13 10:47:00"）
+        startTs() {
+            if (!this.act || !this.act.startTime) return NaN
+            return new Date(String(this.act.startTime).replace(/-/g, '/').replace('T', ' ')).getTime()
+        },
+        // 签到时间窗：仅活动开始起 1 小时内
+        checkinWindowOpen() {
+            if (isNaN(this.startTs)) return false
+            const now = Date.now()
+            return now >= this.startTs && now <= this.startTs + 3600 * 1000
+        },
+        checkinBtnText() {
+            if (this.checkinWindowOpen) return '签到'
+            if (isNaN(this.startTs)) return '签到'
+            return Date.now() < this.startTs ? '未到签到时间' : '签到已截止'
+        },
+        // 已签到/活动已结束不再展示取消报名入口——那两种情况取消也没有意义
+        // 待支付也可以取消（放弃这次下单）——不受 24 小时限制，见下面 cancelWindowOpen
+        canCancelEntry() {
+            return !!(this.act && !this.isMainLeader && (this.act.isRegistered || this.act.paymentPending) && !this.act.isCheckedIn && !this.activityEnded)
+        },
+        // 取消报名需距活动开始 24 小时以上，与后端 ActivityService.cancelRegistration 的硬性拦截保持一致；
+        // 待支付的还没真正生效，不受此限制，随时可以取消
+        cancelWindowOpen() {
+            if (this.act && this.act.paymentPending) return true
+            if (isNaN(this.startTs)) return true
+            return Date.now() < this.startTs - 24 * 3600 * 1000
+        },
         showSos() {
-            return !!(this.act && this.act.isRegistered && this.act.status !== 'completed' && this.act.status !== 'cancelled' && this.act.status !== 'withdrawn')
+            return !!(this.act && this.act.isRegistered && !this.activityEnded)
         },
         showFeeling() {
             return !!(this.act && this.act.isCheckedIn && this.act.status === 'completed' && !this.act.feelingGiven && !this.feelingJustSubmitted)
@@ -261,9 +340,10 @@ export default {
             if (s === 'completed') return '活动已结束'
             if (s === 'cancelled' || s === 'withdrawn') return '活动已取消'
             if (this.act.isWaitlisted) return `候补中 · 第 ${this.act.waitlistPosition} 位（点此退出）`
+            if (this.act.paymentPending) return `待支付 · ¥${this.act.fee}（点此继续支付）`
             if (this.act.isRegistered) return '已报名 · 查看我的活动'
             if (this.act.isFull) return '报名候补 · 当前满员'
-            return `报名 ${this.feeStr}${this.act.fee > 0 ? '（含保险）' : ''}`
+            return this.act.fee > 0 ? `点击报名 · ¥${this.act.fee}` : '点击报名'
         }
     },
     onLoad(q) {
@@ -277,6 +357,8 @@ export default {
         if (this.id) this.load()
     },
     methods: {
+        spx(n) { return spxName(n) },
+        goMember(e) { goMemberProfile(e.currentTarget.dataset.uid) },
         gradAt(i) {
             const g = ['linear-gradient(135deg,#ffd36e,#ff8f6e)', 'linear-gradient(135deg,#8fd3ff,#5e8bff)', 'linear-gradient(135deg,#b6f0c9,#5ecb8f)', 'linear-gradient(135deg,#c9b6ff,#8f6eff)', 'linear-gradient(135deg,#ffb6d1,#ff6f97)']
             return g[i % g.length]
@@ -301,6 +383,8 @@ export default {
         maybePromptCheckin() {
             if (!this.autoCheckin || this.checkinPrompted || !this.act) return
             if (!this.act.isRegistered || this.act.isCheckedIn) return
+            // 活动已结束或不在签到时间窗内：不弹签到提示（后端也会拒绝）
+            if (this.activityEnded || !this.checkinWindowOpen) return
             this.checkinPrompted = true
             uni.showModal({
                 title: '现在定位签到？', content: `你今天报名了「${this.act.title}」。到达集合点后点「定位签到」即可完成签到。`,
@@ -318,10 +402,9 @@ export default {
                 description: a.description || '',
                 meetingPoint: a.meetingPoint || '', meetingLatitude: a.meetingLatitude, meetingLongitude: a.meetingLongitude,
                 disbandPoint: a.disbandPoint || '', disbandLatitude: a.disbandLatitude, disbandLongitude: a.disbandLongitude,
-                distance: a.distance, difficulty: a.difficulty, maxParticipants: a.maxParticipants,
-                tags: (a.tags || []).slice(), fee: a.fee,
-                basePoints: (a.userPoints && a.userPoints.basePoints) || 30,
-                fullAttendanceBonus: (a.userPoints && a.userPoints.fullAttendanceBonus) || 10
+                distance: a.distance, elevation: a.elevation, difficulty: a.difficulty, maxParticipants: a.maxParticipants,
+                tags: (a.tags || []).slice(), fee: a.fee
+                // 群二维码故意不带——那是绑定这一场具体群聊的，带过去会把新报名的人导向旧群
             }
             uni.setStorageSync('reuseRouteTpl', tpl)
             uni.navigateTo({ url: '/pages/leader/create?reuse=1' })
@@ -329,8 +412,13 @@ export default {
         async onCta() {
             if (this.ctaDisabled) return
             if (this.act.isWaitlisted) { this.leaveWaitlist(); return }
+            // 待支付：继续支付已有订单，不要再走一遍报名（会撞上"请勿重复报名"）
+            if (this.act.paymentPending) { this.handlePay({ orderId: this.act.pendingOrderId, amount: this.act.fee, payParams: this.act.pendingPayParams }); return }
             if (this.act.isRegistered) { uni.navigateTo({ url: '/pages/activity/mine' }); return }
             if (!isLoggedIn()) { uni.navigateTo({ url: '/pages/login/login' }); return }
+            // 报名前二次确认：本活动不含保险，需骑友自行购买
+            const insured = await this.confirmInsurance()
+            if (!insured) return
             if (this.registering) return
             this.registering = true
             try {
@@ -363,6 +451,35 @@ export default {
                 this.afterRegistered(r)
             } catch (e) {} finally { this.registering = false }
         },
+        // 俱乐部不统一投保，报名前必须让用户明确知晓并确认已自行购买保险，而不是默默假设大家都知道
+        confirmInsurance() {
+            return new Promise((resolve) => {
+                uni.showModal({
+                    title: '骑行安全提示',
+                    content: '本活动不含商业保险，请确认已自行购买骑行意外险 / 人身意外险后再报名。骑行有风险，安全保障需自行准备。',
+                    confirmText: '已购买，继续报名',
+                    cancelText: '再想想',
+                    confirmColor: '#0ba968',
+                    success: (m) => resolve(!!m.confirm),
+                    fail: () => resolve(false)
+                })
+            })
+        },
+        onCancelRegistration() {
+            if (!this.cancelWindowOpen) { uni.showToast({ title: '距活动开始不足 24 小时，暂不支持取消', icon: 'none' }); return }
+            uni.showModal({
+                title: '取消报名', content: '确定要取消本场活动的报名吗？取消后需要重新报名才能参加。',
+                confirmText: '确定取消', confirmColor: '#e0533d',
+                success: async (m) => {
+                    if (!m.confirm) return
+                    try {
+                        await cancelRegistration(this.id, '用户取消')
+                        uni.showToast({ title: '已取消报名', icon: 'none' })
+                        this.load()
+                    } catch (e) {}
+                }
+            })
+        },
         // B2：处理支付（开发者工具模拟支付，真机走微信支付）
         handlePay(r) {
             const pay = async () => {
@@ -383,12 +500,12 @@ export default {
                 uni.showToast({ title: '报名成功，请签署协议', icon: 'none' })
                 setTimeout(() => { uni.navigateTo({ url: `/pages/agreement/sign?agreementId=${r.agreementId}&activityId=${this.id}` }) }, 600)
             } else {
-                uni.showToast({ title: r && r.paid ? '支付成功 · 报名生效' : (r && r.insurancePolicyNo ? '报名成功 · 已赠意外险' : '报名成功'), icon: 'success' })
+                uni.showToast({ title: r && r.paid ? '支付成功 · 报名生效' : '报名成功', icon: 'success' })
                 this.load()
             }
         },
         showFirstRideWelcome(r) {
-            const leaderName = (this.act && this.act.leader && this.act.leader.nickname) || '领队'
+            const leaderName = spxName((this.act && this.act.leader && this.act.leader.nickname) || '') || '领队'
             const others = (r.newbieCount || 1) - 1
             const newbieLine = others > 0 ? `同场还有 ${others} 位新人，你不是一个人～` : '你是本场第一位新人，领队会格外照顾～'
             const content = `这是你在 SpinX 的第一次骑行 🎉\n\n· 提前 15 分钟到集合点\n· 不要跟高速集团，保持自己的节奏\n· 今天的领队是 @${leaderName}\n· ${newbieLine}`
@@ -402,6 +519,11 @@ export default {
         },
         onCheckin() {
             if (this.act.isCheckedIn) { uni.showToast({ title: '你已签到', icon: 'none' }); return }
+            if (this.activityEnded) { uni.showToast({ title: '活动已结束，签到已关闭', icon: 'none' }); return }
+            if (!this.checkinWindowOpen) {
+                uni.showToast({ title: isNaN(this.startTs) || Date.now() < this.startTs ? '未到签到时间，活动开始后 1 小时内可签到' : '签到已截止（活动开始 1 小时内可签到）', icon: 'none' })
+                return
+            }
             if (this.checkingIn) return
             if (!this.hasGeo) { uni.showModal({ title: '无法定位签到', content: '本场活动未设置集合点坐标，请联系领队现场签到', showCancel: false, confirmText: '知道了' }); return }
             this.checkingIn = true
@@ -424,10 +546,10 @@ export default {
                         return
                     }
                     try {
-                        await checkin(this.id, { checkinType: 'gps', latitude: loc.latitude, longitude: loc.longitude })
-                        this.act.isCheckedIn = true
+                        await checkin(this.id, { latitude: loc.latitude, longitude: loc.longitude })
                         uni.hideLoading()
                         uni.showToast({ title: '签到成功', icon: 'success' })
+                        this.load()
                     } catch (e) { uni.hideLoading() } finally { this.checkingIn = false }
                 },
                 fail: () => {
@@ -440,7 +562,24 @@ export default {
         },
         showGroupQr() { this.qrShow = true },
         closeQr() { this.qrShow = false },
-        goInsurance() { uni.navigateTo({ url: '/pages/insurance/policies' }) },
+        copyRouteId(e) {
+            const ext = e.currentTarget.dataset.ext
+            if (!ext) return
+            uni.setClipboardData({
+                data: ext,
+                success: () => uni.showToast({ title: '路线 ID 已复制', icon: 'none' })
+            })
+        },
+        onCoverSwiper(e) { this.coverIndex = (e && e.detail && e.detail.current) || 0 },
+        previewPromo(e) {
+            const urls = this.promoImages
+            uni.previewImage({ urls, current: urls[+e.currentTarget.dataset.i] })
+        },
+        // 宣传图加载失败（URL 不可达，如上传残留的临时路径）→ 从展示集合剔除，避免留下一片空白占位
+        onPromoError(e) {
+            const src = e.currentTarget.dataset.src
+            if (src && this.promoBroken.indexOf(src) === -1) this.promoBroken.push(src)
+        },
         toggleFeeling(e) {
             const f = e.currentTarget.dataset.f
             const i = this.selectedFeelings.indexOf(f)
@@ -486,33 +625,42 @@ export default {
         },
         async sendSosWithLoc(loc) {
             try {
-                // 逆地址解析成道路级地名；无 Key/失败则降级显示坐标，绝不因此耽误求助
+                // 逆地址解析成「市区街道 + 附近地标」；无 Key/解析失败时不展示裸坐标（用户读不懂也没法口述），
+                // 改用「在地图中查看」让人一眼定位，经纬度仍随请求原样上报给后端/领队，救援信息不丢失。
                 let locName = loc ? null : '未获取到位置，请电话口述位置'
                 if (loc) {
                     try { locName = await reverseGeocode(loc.latitude, loc.longitude) } catch (e) {}
-                    if (!locName) locName = `坐标 ${loc.latitude.toFixed(5)}, ${loc.longitude.toFixed(5)}`
                 }
                 await sendSOS({ activityId: this.id, latitude: loc ? loc.latitude : null, longitude: loc ? loc.longitude : null, locationName: loc ? locName : null })
                 uni.hideLoading()
                 this.sosResult = {
                     hasLoc: !!loc,
-                    locName,
-                    leaderName: (this.act && this.act.leader && this.act.leader.nickname) || '领队',
-                    leaderPhone: (this.act && this.act.leaderPhone) || ''
+                    locName: loc ? (locName || '地址解析失败，请点击查看地图定位') : locName,
+                    lat: loc ? loc.latitude : null,
+                    lng: loc ? loc.longitude : null,
+                    leaderName: spxName((this.act && this.act.leader && this.act.leader.nickname) || '') || '领队',
+                    leaderPhone: (this.act && this.act.leader && this.act.leader.phone) || ''
                 }
             } catch (e) { uni.hideLoading() } finally { this.sosing = false }
+        },
+        viewSosLocation() {
+            if (!this.sosResult || this.sosResult.lat == null) return
+            uni.openLocation({ latitude: this.sosResult.lat, longitude: this.sosResult.lng, name: this.sosResult.locName || '我的位置', scale: 16 })
         },
         callPhone(e) {
             const phone = e.currentTarget.dataset.phone
             if (phone) uni.makePhoneCall({ phoneNumber: String(phone) })
+            else uni.showToast({ title: '暂无领队电话，请用其他方式联系', icon: 'none' })
         },
         closeSos() { this.sosResult = null },
-        async share() {
-            try { const r = await shareActivity(this.id, 'moments'); if (r && r.pointsGranted) uni.showToast({ title: `分享 +${r.points} 积分`, icon: 'none' }) } catch (e) {}
+        // 转发面板真正打开时才算一次分享意图，在这里领积分（而不是点击按钮就领，那时用户还没选是否真的转发）
+        async grantSharePoints() {
+            try { const r = await shareActivity(this.id, 'session'); if (r && r.pointsGranted) uni.showToast({ title: `分享 +${r.points} 积分`, icon: 'none' }) } catch (e) {}
         }
     },
-    // 转发（微信原生分享）
+    // 转发（微信原生分享，按钮需 open-type="share" 才会触发系统转发面板）
     onShareAppMessage() {
+        this.grantSharePoints()
         return { title: this.act ? this.act.title : '环星骑行', path: '/pages/activity/detail?id=' + this.id }
     }
 }
@@ -530,26 +678,36 @@ export default {
     background: linear-gradient(165deg, #0c1a24 0%, #123a57 52%, #0a5c86 100%); display: flex; flex-direction: column; align-items: center; }
 .grain { position: absolute; inset: 0; opacity: .8;
     background: radial-gradient(2rpx 2rpx at 24% 34%, #fff, transparent), radial-gradient(2rpx 2rpx at 66% 22%, #bfe9ff, transparent), radial-gradient(2rpx 2rpx at 82% 52%, #fff, transparent), radial-gradient(2rpx 2rpx at 44% 66%, #fff, transparent); }
-.cmeta { position: relative; z-index: 1; text-align: center; margin-top: 20rpx; }
+/* 高度写死跟 .cover 一致的 480rpx，不依赖 swiper/swiper-item 的百分比继承——
+   百分比高度在真机上偶发不生效（模拟器里往往正常），写死数值才稳。 */
+.coverswiper { position: absolute; inset: 0; width: 100%; height: 480rpx; }
+.coverimg { display: block; width: 100%; height: 480rpx; }
+/* 图上叠一层深色渐变，保证顶部/底部文字与指示点在真实照片背景下依然可读。
+   这几个都是纯展示的覆盖层，不需要接收点击——不加 pointer-events:none 的话它们会
+   挡在 swiper 图片上面，点封面图永远点不到图，只能点到这层空气。 */
+.coverscrim { position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(180deg, rgba(6,14,20,.55) 0%, rgba(6,14,20,.1) 42%, rgba(6,14,20,.6) 100%); }
+.cmeta { position: relative; z-index: 1; text-align: center; margin-top: 20rpx; pointer-events: none; padding: 0 30rpx; }
 .cvol { display: block; font-size: 30rpx; font-weight: 700; }
 .cline { display: block; font-size: 21rpx; opacity: .85; margin-top: 10rpx; }
-.cbike { position: relative; z-index: 1; font-size: 150rpx; margin-top: 40rpx; filter: drop-shadow(0 0 30rpx rgba(111,208,255,.6)); }
-.dots { position: absolute; bottom: 40rpx; display: flex; gap: 10rpx; }
+.cbike { position: relative; z-index: 1; font-size: 150rpx; margin-top: 40rpx; filter: drop-shadow(0 0 30rpx rgba(111,208,255,.6)); pointer-events: none; }
+.dots { position: absolute; bottom: 40rpx; display: flex; gap: 10rpx; pointer-events: none; }
+.pmark { position: absolute; right: 24rpx; z-index: 2; pointer-events: none; }
 .dot { width: 12rpx; height: 12rpx; border-radius: 50%; background: rgba(255,255,255,.45); }
 .dot.on { width: 32rpx; border-radius: 6rpx; background: $green; }
 
 .sheet { position: relative; margin-top: -40rpx; background: $card; border-radius: 40rpx 40rpx 0 0; padding: 36rpx 30rpx 0; }
-.title { font-size: 40rpx; font-weight: 800; line-height: 1.3; }
-.subline { display: flex; align-items: center; gap: 14rpx; margin-top: 22rpx; }
-.badge-ins { font-size: 21rpx; font-weight: 800; color: $green-deep; background: $green-soft; padding: 8rpx 16rpx; border-radius: 14rpx; }
-.tg { font-size: 24rpx; color: $ink-2; font-weight: 600; background: $paper; padding: 8rpx 16rpx; border-radius: 14rpx; }
 
 .infocard { background: $paper; border-radius: 26rpx; padding: 26rpx; margin-top: 26rpx; }
 .irow { display: flex; gap: 20rpx; align-items: flex-start; }
 .irow.bt { margin-top: 24rpx; padding-top: 24rpx; border-top: 1rpx solid $line; }
+/* "路线信息"行是 v-if 条件展示的，不显示时"集合地点"就变成第一行——不管谁排第一，
+   第一行都不该带上面那条分隔线，不然会在卡片顶部凭空多一条线 */
+.infocard .irow:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 .iic { font-size: 30rpx; width: 36rpx; }
 .ik { display: block; font-size: 21rpx; color: $muted; font-weight: 700; }
 .iv { display: block; font-size: 27rpx; font-weight: 700; margin-top: 6rpx; }
+.routecopy { flex: none; align-self: center; font-size: 21rpx; font-weight: 800; color: $green-deep; background: $green-soft; padding: 8rpx 18rpx; border-radius: 12rpx; }
 .mapbox { margin-top: 20rpx; }
 .people { display: flex; align-items: center; margin-top: 18rpx; }
 .pav { width: 64rpx; height: 64rpx; border-radius: 50%; border: 3rpx solid #fff; }
@@ -573,11 +731,6 @@ export default {
     display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .sosi { font-size: 40rpx; line-height: 1.1; }
 .sost { font-size: 18rpx; font-weight: 800; color: #fff; margin-top: 2rpx; }
-
-.insline { display: flex; align-items: center; gap: 12rpx; margin-top: 24rpx; background: $green-soft; border-radius: 20rpx; padding: 22rpx 24rpx; }
-.insi { font-size: 30rpx; flex: none; }
-.inst { flex: 1; min-width: 0; font-size: 23rpx; font-weight: 700; color: $green-deep; }
-.insarw { font-size: 21rpx; font-weight: 800; color: $green-deep; flex: none; }
 
 .feelbox { margin-top: 24rpx; background: $card; border-radius: 22rpx; padding: 24rpx 26rpx; box-shadow: inset 0 0 0 1rpx $hair; }
 .feelt { display: block; font-size: 26rpx; font-weight: 800; }
@@ -605,8 +758,14 @@ export default {
 .desc { display: block; margin-top: 18rpx; font-size: 24rpx; color: $ink-2; line-height: 1.7; }
 .risk { margin-top: 24rpx; background: #fbf7e8; border-radius: 18rpx; padding: 20rpx; display: flex; gap: 12rpx; }
 .ri { font-size: 26rpx; } .rt { flex: 1; font-size: 22rpx; color: #8a6d1a; line-height: 1.6; }
-.leadentry, .reuse { display: flex; align-items: center; gap: 16rpx; margin-top: 24rpx; background: $night-1; border-radius: 22rpx; padding: 24rpx; }
+.insnotice { margin-top: 24rpx; background: #eef3fb; border-radius: 18rpx; padding: 20rpx; display: flex; gap: 12rpx; }
+.insnotice .rt { color: #2b6bb5; }
+.leadentry, .reuse, .cancelentry { display: flex; align-items: center; gap: 16rpx; margin-top: 24rpx; background: $night-1; border-radius: 22rpx; padding: 24rpx; }
 .reuse { background: linear-gradient(120deg, $green-deep, #0a7d52); }
+.cancelentry { background: rgba(224,83,61,.1); box-shadow: inset 0 0 0 1rpx rgba(224,83,61,.3); color: #e0533d; }
+.cancelentry .le-t1, .cancelentry .le-arw { color: #e0533d; }
+.cancelentry .le-t2 { color: rgba(224,83,61,.7); }
+.cancelentry.off { opacity: .55; }
 .le-i { font-size: 34rpx; }
 .le-t { flex: 1; }
 .le-t1 { display: block; color: #fff; font-size: 27rpx; font-weight: 800; }
@@ -615,7 +774,9 @@ export default {
 .safe-bottom { height: 40rpx; }
 
 .cta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: flex; align-items: center; gap: 22rpx; padding: 18rpx 30rpx 0; border-top: 1rpx solid $hair; background: $card; box-shadow: 0 -8rpx 24rpx -10rpx rgba(9,20,15,.16); }
-.qa { display: flex; flex-direction: column; align-items: center; gap: 4rpx; font-size: 19rpx; color: $muted; font-weight: 600; }
+.qa { display: flex; flex-direction: column; align-items: center; gap: 4rpx; font-size: 19rpx; color: $muted; font-weight: 600;
+    background: transparent; border: none; padding: 0; margin: 0; line-height: normal; }
+.qa::after { border: none; }
 .qa .qi { font-size: 34rpx; }
 .go { flex: 1; height: 96rpx; border-radius: 30rpx; background: linear-gradient(120deg, $green, $green-deep); color: #04140c;
     display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -629,6 +790,7 @@ export default {
 .go2 .gt { font-weight: 800; font-size: 29rpx; }
 .go2 .gi2 { font-size: 30rpx; }
 .go2.done { background: $green-soft; color: $green-deep; box-shadow: inset 0 0 0 2rpx rgba(11,169,104,.35); }
+.go2.off { background: #d7ddda; color: #8a968f; }
 .go2.group { background: $night-1; color: #fff; }
 
 /* 加群二维码弹层 */
@@ -646,8 +808,10 @@ export default {
 .sosttl { display: block; font-size: 32rpx; font-weight: 800; color: #d9442e; text-align: center; }
 .sostip { display: block; font-size: 22rpx; color: $ink-2; line-height: 1.6; margin-top: 14rpx; text-align: center; }
 .sosrow { display: flex; align-items: flex-start; gap: 16rpx; background: $paper; border-radius: 18rpx; padding: 20rpx 22rpx; margin-top: 16rpx; }
+.sosrow.tap { box-shadow: inset 0 0 0 1rpx $line; }
 .sosk { flex: none; width: 150rpx; font-size: 23rpx; color: $muted; font-weight: 700; }
 .sosv { flex: 1; min-width: 0; font-size: 24rpx; font-weight: 800; color: $ink; line-height: 1.5; }
+.sosmap { font-size: 20rpx; font-weight: 800; color: $green-deep; }
 .soscall { height: 88rpx; border-radius: 22rpx; display: flex; align-items: center; justify-content: center; font-size: 28rpx; font-weight: 800; margin-top: 18rpx; }
 .soscall.lead { background: linear-gradient(120deg, $green, $green-deep); color: #04140c; }
 .soscall.danger { background: #fdecea; color: #d9442e; }

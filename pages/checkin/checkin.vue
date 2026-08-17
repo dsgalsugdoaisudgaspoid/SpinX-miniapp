@@ -2,6 +2,7 @@
     <view class="checkin">
         <view class="hero" :style="{ paddingTop: (statusBar + 24) + 'px' }">
             <view class="stars"></view>
+            <brand-mark class="pmark" :style="{ top: (statusBar + 16) + 'px' }" width="96rpx"></brand-mark>
             <text class="bike">🚴</text>
             <text class="slogan">迎风出发，把自由踩出来</text>
             <text class="sub">到达集合点后，在活动详情页一键定位签到，全勤有额外积分</text>
@@ -35,8 +36,10 @@
 import { myActivities } from '@/api/user.js'
 import { isLoggedIn, hasRole } from '@/store/user.js'
 import { fmtTime } from '@/common/util.js'
+import BrandMark from '@/components/brand-mark/brand-mark.vue'
 
 export default {
+    components: { BrandMark },
     data() { return { statusBar: 20, items: [], loading: false } },
     computed: { isLeader() { return hasRole('leader') || hasRole('admin') } },
     onLoad() { try { this.statusBar = uni.getSystemInfoSync().statusBarHeight || 20 } catch (e) {} },
@@ -89,6 +92,7 @@ export default {
     background: linear-gradient(160deg, #0e1b24, #123a57 60%, #0a5c86); }
 .stars { position: absolute; inset: 0; opacity: .5;
     background: radial-gradient(2rpx 2rpx at 24% 30%, #fff, transparent), radial-gradient(2rpx 2rpx at 70% 24%, #bfe9ff, transparent), radial-gradient(2rpx 2rpx at 54% 14%, #fff, transparent); }
+.pmark { position: absolute; left: 40rpx; z-index: 2; }
 .bike { position: relative; font-size: 120rpx; filter: drop-shadow(0 0 26rpx rgba(111,208,255,.6)); }
 .slogan { position: relative; display: block; font-size: 38rpx; font-weight: 800; margin-top: 16rpx; }
 .sub { position: relative; display: block; font-size: 22rpx; opacity: .82; margin-top: 14rpx; line-height: 1.6; }

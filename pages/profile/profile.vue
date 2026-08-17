@@ -3,13 +3,15 @@
         <!-- 夜色头部 -->
         <view class="phead" :style="{ paddingTop: (statusBar + 12) + 'px' }">
             <view class="stars"></view>
+            <brand-mark class="pmark" :style="{ top: (statusBar + 12) + 'px' }" width="96rpx"></brand-mark>
             <block v-if="loggedIn">
                 <view class="topset" @tap="goSettings">⚙</view>
                 <view class="u">
                     <view class="ua"></view>
                     <view class="uinfo">
-                        <text class="uname">{{ profile.nickname || '骑友' }}</text>
-                        <text class="uno mono">会员编号 {{ profile.memberNo || '—' }}</text>
+                        <text class="uname">{{ profile.nickname ? spx(profile.nickname) : '骑友' }}</text>
+                        <!-- 有学号就展示它（对外的社区身份）；没有才退回内部会员编号，避免两个号同时出现让人困惑 -->
+                        <text class="uno mono" @tap="goMemberNumber">{{ profile.spinxNo ? ('SpinX 学号 ' + profile.spinxNo) : ('会员编号 ' + (profile.memberNo || '—')) }}</text>
                         <view class="rbadges">
                             <text class="rb core" @tap="goAssessment">骑游等级 · {{ tierIcon }} {{ profile.memberTierName || '星星' }} ›</text>
                             <view v-if="primaryTitle" @tap="goTitles"><title-badge :title="primaryTitle" size="sm"></title-badge></view>
@@ -58,6 +60,10 @@
             <view class="idsec">
                 <text class="idtitle">身份与记忆</text>
                 <view class="idgrid">
+                    <view class="id2" @tap="goMemberNumber">
+                        <text class="idi">🪪</text><text class="idt">我的学号</text>
+                        <text v-if="!profile.spinxNo" class="idbadge">去申请</text>
+                    </view>
                     <view class="id2" @tap="goAchievements"><text class="idi">🏆</text><text class="idt">我的成就</text></view>
                     <view class="id2" @tap="goTitles"><text class="idi">🏷</text><text class="idt">我的称号</text></view>
                     <view class="id2" @tap="goJournal"><text class="idi">📔</text><text class="idt">骑行日记</text></view>
@@ -67,7 +73,7 @@
                     <view class="matelist">
                         <view v-for="m in coRiders" :key="m.userId" class="mate">
                             <view class="mav" :style="{ backgroundImage: m.avatar ? ('url(' + m.avatar + ')') : '' }"></view>
-                            <text class="man ellipsis">{{ m.nickname }}</text>
+                            <text class="man ellipsis">{{ spx(m.nickname) }}</text>
                             <text class="mac mono">{{ m.rideCount }} 次</text>
                         </view>
                     </view>
@@ -90,7 +96,6 @@
                 <view class="mrow" @tap="goMilestone"><text class="mi">🏅</text><text class="mt2 lead">骑行纪念碑 · 年度回忆</text><text class="marw">›</text></view>
                 <view class="mrow" @tap="goCredit"><text class="mi">🎖</text><text class="mt2 lead">我的信誉分</text><text class="marw">›</text></view>
                 <view class="mrow" @tap="goSafety"><text class="mi">🚑</text><text class="mt2 lead">安全档案 · 紧急联系人</text><text class="marw">›</text></view>
-                <view class="mrow" @tap="goInsurance"><text class="mi">🛡</text><text class="mt2 lead">我的保单 · 骑行意外险</text><text class="marw">›</text></view>
                 <view class="mrow" @tap="goAssessment"><text class="mi">🎯</text><text class="mt2 lead">考核赛段 · 冲刺月亮 / 太阳</text><text class="marw">›</text></view>
                 <view class="mrow" @tap="goLottery"><text class="mi">🎁</text><text class="mt2 lead">幸运抽奖 · 积分换好礼</text><text class="marw">›</text></view>
                 <view v-if="showCoach" class="mrow" @tap="goCoachCenter"><text class="mi">🚴‍♂️</text><text class="mt2 lead">陪练中心 · 找陪练 / 成为陪练</text><text class="marw">›</text></view>
@@ -137,12 +142,13 @@ import { getProfile, ridingArchive, myAgreements, unreadCount } from '@/api/user
 import { logout, wxLogin } from '@/api/auth.js'
 import { getMyTitles, getCoRiders } from '@/api/identity.js'
 import { isLoggedIn, hasRole } from '@/store/user.js'
-import { statusBarHeight } from '@/common/util.js'
+import { statusBarHeight, spxName } from '@/common/util.js'
 import { FEATURES, tierOf, MEMBER_TIERS, BASE_URL, DEMO_ACCOUNTS } from '@/common/config.js'
 import TitleBadge from '@/components/title-badge/title-badge.vue'
+import BrandMark from '@/components/brand-mark/brand-mark.vue'
 
 export default {
-    components: { TitleBadge },
+    components: { TitleBadge, BrandMark },
     data() {
         return { showCoach: FEATURES.coach, tiers: MEMBER_TIERS, statusBar: 20, loggedIn: false, profile: {}, archive: {}, agreements: [], unread: 0, primaryTitle: null, coRiders: [], // 判断是否连的是开发环境后端：localhost（模拟器联调）或局域网 IP（真机调试，如 192.168.x.x）。
                 // 真正的安全边界在后端——mock 登录仅在 spinx.wechat.mock-enabled=true 时可用，且生产环境
@@ -173,6 +179,7 @@ export default {
         if (this.loggedIn) this.loadAll()
     },
     methods: {
+        spx(n) { return spxName(n) },
         async loadAll() {
             try { this.profile = await getProfile() } catch (e) {}
             try { this.archive = await ridingArchive() } catch (e) {}
@@ -187,6 +194,7 @@ export default {
         },
         goAchievements() { uni.navigateTo({ url: '/pages/achievement/list' }) },
         goTitles() { uni.navigateTo({ url: '/pages/identity/titles' }) },
+        goMemberNumber() { uni.navigateTo({ url: '/pages/identity/member-number' }) },
         goJournal() { uni.navigateTo({ url: '/pages/journal/list' }) },
         goLogin() { uni.navigateTo({ url: '/pages/login/login' }) },
         goSettings() { uni.navigateTo({ url: '/pages/settings/settings' }) },
@@ -207,7 +215,6 @@ export default {
         goSafety() { uni.navigateTo({ url: '/pages/safety/profile' }) },
         goCredit() { uni.navigateTo({ url: '/pages/credit/credit' }) },
         goMilestone() { uni.navigateTo({ url: '/pages/milestone/monument' }) },
-        goInsurance() { uni.navigateTo({ url: '/pages/insurance/policies' }) },
         goAssessment() { uni.navigateTo({ url: '/pages/assessment/list' }) },
         goLottery() { uni.navigateTo({ url: '/pages/lottery/lottery' }) },
         goRaffleAdmin() { uni.navigateTo({ url: '/pages/admin/raffle-edit' }) },
@@ -243,6 +250,7 @@ export default {
     background: linear-gradient(155deg, #0e1b24, #123a57); }
 .stars { position: absolute; inset: 0; opacity: .4;
     background: radial-gradient(2rpx 2rpx at 20% 30%, #fff, transparent), radial-gradient(2rpx 2rpx at 76% 24%, #bfe9ff, transparent), radial-gradient(2rpx 2rpx at 54% 14%, #fff, transparent); }
+.pmark { position: absolute; left: 36rpx; z-index: 2; }
 .u { position: relative; display: flex; align-items: center; gap: 24rpx; padding-top: 20rpx; }
 .ua { width: 116rpx; height: 116rpx; border-radius: 34rpx; background: linear-gradient(140deg, #5ecb8f, #0ba968); box-shadow: 0 0 0 4rpx rgba(255,255,255,.25); }
 .uname { font-size: 40rpx; font-weight: 800; }
@@ -281,10 +289,13 @@ export default {
 /* 身份与记忆 */
 .idsec { margin: 20rpx 28rpx 0; background: $card; border-radius: 26rpx; padding: 26rpx; box-shadow: inset 0 0 0 1rpx $hair; }
 .idtitle { display: block; font-size: 26rpx; font-weight: 800; }
-.idgrid { display: grid; grid-template-columns: repeat(3, 1fr); grid-gap: 16rpx; gap: 16rpx; margin-top: 18rpx; }
-.id2 { background: $paper; border-radius: 20rpx; padding: 24rpx 0; text-align: center; }
+/* 四个入口用 2×2，比 3 列少一个落单的格子 */
+.idgrid { display: grid; grid-template-columns: repeat(2, 1fr); grid-gap: 16rpx; gap: 16rpx; margin-top: 18rpx; }
+.id2 { position: relative; background: $paper; border-radius: 20rpx; padding: 24rpx 0; text-align: center; }
 .idi { font-size: 40rpx; }
 .idt { display: block; font-size: 22rpx; font-weight: 700; margin-top: 10rpx; }
+.idbadge { position: absolute; top: 12rpx; right: 12rpx; font-size: 18rpx; font-weight: 800; color: #04140c;
+    background: $green; padding: 4rpx 12rpx; border-radius: 10rpx; }
 .mates { margin-top: 24rpx; padding-top: 24rpx; border-top: 1rpx solid $hair; }
 .matest { display: block; font-size: 24rpx; font-weight: 800; }
 .matelist { display: flex; gap: 22rpx; margin-top: 18rpx; overflow-x: auto; }

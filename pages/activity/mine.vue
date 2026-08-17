@@ -34,6 +34,7 @@
 import { myActivities } from '@/api/user.js'
 import { cancelRegistration } from '@/api/activity.js'
 import { fmtTime } from '@/common/util.js'
+import { currentUser } from '@/store/user.js'
 
 export default {
     data() {
@@ -62,7 +63,12 @@ export default {
                 this.items = (d && d.list) || []
             } catch (e) { this.items = [] } finally { this.loading = false }
         },
-        canCancel(a) { return (a.myStatus || 'upcoming') === 'upcoming' && a.registrationStatus !== 'cancelled' },
+        // 主领队不能取消自己主领的这场（后端也会拦），退出只能走转让主领队资格
+        canCancel(a) {
+            const me = currentUser()
+            const isMainLeader = !!(me && a.leaderId === me.userId)
+            return (a.myStatus || 'upcoming') === 'upcoming' && a.registrationStatus !== 'cancelled' && !isMainLeader
+        },
         onCancel(e) {
             const ds = e.currentTarget.dataset
             const id = ds.id, title = ds.title

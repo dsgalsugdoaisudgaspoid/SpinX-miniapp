@@ -10,16 +10,16 @@
         <view class="mine" v-if="myRank">
             <text class="mrk mono">NO.{{ myRank.rank }}</text>
             <view class="mav"></view>
-            <view class="mmid"><text class="mn">我 · {{ myRank.nickname }}</text><text class="ms">最好成绩 {{ fmtDur(myRank.durationSec) }}</text></view>
+            <view class="mmid"><text class="mn">我 · {{ spx(myRank.nickname) }}</text><text class="ms">最好成绩 {{ fmtDur(myRank.durationSec) }}</text></view>
             <text class="mtag">我的名次</text>
         </view>
 
         <view class="listbox">
             <view class="lhd"><text>完整榜单</text><text class="cnt">共 {{ list.length }} 人完赛</text></view>
-            <view v-for="u in list" :key="u.userId" class="row" :class="{ me: myRank && u.userId === myRank.userId }">
+            <view v-for="u in list" :key="u.userId" class="row" :class="{ me: myRank && u.userId === myRank.userId }" :data-uid="u.userId" @tap="goMember">
                 <text class="rk mono" :class="'r' + u.rank">{{ u.rank <= 3 ? medal(u.rank) : u.rank }}</text>
                 <view class="rav" :style="{ backgroundImage: u.avatar ? ('url(' + u.avatar + ')') : '' }"></view>
-                <view class="rmid"><text class="rn ellipsis">{{ u.nickname }}</text><text class="rs">{{ shortDate(u.finishedAt) }} 完赛</text></view>
+                <view class="rmid"><text class="rn ellipsis">{{ spx(u.nickname) }}</text><text class="rs">{{ shortDate(u.finishedAt) }} 完赛</text></view>
                 <text class="rtime mono">{{ fmtDur(u.durationSec) }}</text>
             </view>
             <view v-if="!loading && list.length === 0" class="empty">该赛段还没有完赛成绩，快去挑战第一名！</view>
@@ -31,13 +31,15 @@
 
 <script>
 import { assessmentLeaderboard } from '@/api/assessment.js'
-import { statusBarHeight } from '@/common/util.js'
+import { statusBarHeight, spxName, goMemberProfile } from '@/common/util.js'
 import { isLoggedIn } from '@/store/user.js'
 
 export default {
     data() { return { statusBar: 20, id: null, name: '', dirName: '', timeLimit: 0, list: [], myRank: null, loading: false } },
     onLoad(q) { this.statusBar = statusBarHeight(); this.id = q.id; this.load() },
     methods: {
+        spx(n) { return spxName(n) },
+        goMember(e) { goMemberProfile(e.currentTarget.dataset.uid) },
         medal(r) { return r === 1 ? '🥇' : r === 2 ? '🥈' : '🥉' },
         fmtDur(sec) { sec = sec || 0; const m = Math.floor(sec / 60), s = sec % 60; return m + '分' + (s < 10 ? '0' + s : s) + '秒' },
         shortDate(iso) { if (!iso) return ''; return iso.slice(5, 10) },

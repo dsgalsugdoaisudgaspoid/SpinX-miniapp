@@ -75,6 +75,9 @@ export const BRAND = {
     nameEn: 'SpinX',           // 主名
     wordmarkEn: 'SPIN X',      // 字标展示写法
     short: 'SpinX',
+    // 展示层昵称前缀：全站展示用户昵称的地方统一带上，强化俱乐部归属感。
+    // 仅渲染时拼接（见 common/util.js 的 spxName），不落库、不改用户原始昵称，可编辑输入框不套用。
+    namePrefix: 'SPX-',
     city: '成都',              // 目前唯一城市
     // 兜底行政区划代码（对应 db/data.sql 的城市种子）：/cities 接口也请求失败时的最后一道兜底，
     // 保证 cityCode 参数永远不为空——不然会被 common/request.js 当空值剔除，等于不按城市过滤。

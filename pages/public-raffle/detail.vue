@@ -21,7 +21,7 @@
                 <view v-for="(w, i) in raffle.winners" :key="i" class="wrow">
                     <text class="wc">{{ w.category }}</text>
                     <text class="wp ellipsis flex1">{{ w.prizeName }}</text>
-                    <text class="wn">{{ w.nickname }}</text>
+                    <text class="wn">{{ spx(w.nickname) }}</text>
                 </view>
             </view>
             <view class="safe-bottom" :style="{ height: (110 + safeBottom) + 'px' }"></view>
@@ -37,7 +37,7 @@
 
 <script>
 import { getPublicRaffle, joinPublicRaffle } from '@/api/publicRaffle.js'
-import { statusBarHeight, fmtTime } from '@/common/util.js'
+import { statusBarHeight, fmtTime, spxName } from '@/common/util.js'
 import { isLoggedIn } from '@/store/user.js'
 import { requestSubscribe } from '@/common/subscribe.js'
 import RaffleBoard from '@/components/raffle-board/raffle-board.vue'
@@ -72,6 +72,7 @@ export default {
     },
     onShow() { if (this.id) this.load() },
     methods: {
+        spx(n) { return spxName(n) },
         back() { const p = getCurrentPages(); p.length > 1 ? uni.navigateBack() : uni.switchTab({ url: '/pages/home/home' }) },
         async load() { try { this.raffle = await getPublicRaffle(this.id) } catch (e) {} },
         async join() {

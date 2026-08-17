@@ -71,7 +71,7 @@ export default {
 .cat { display: inline-block; height: 58rpx; line-height: 58rpx; padding: 0 24rpx; border-radius: 18rpx; margin-right: 14rpx; background: $card; font-size: 24rpx; color: $ink-2; font-weight: 600; box-shadow: inset 0 0 0 1rpx $line; }
 .cat.on { background: $green; color: #04140c; font-weight: 800; box-shadow: none; }
 .grid { display: flex; flex-wrap: wrap; gap: 18rpx; padding: 16rpx 24rpx 40rpx; }
-.goods { width: calc(50% - 9rpx); background: $card; border-radius: 26rpx; padding: 20rpx; box-shadow: inset 0 0 0 1rpx $hair; }
+.goods { width: calc(50% - 9rpx); box-sizing: border-box; background: $card; border-radius: 26rpx; padding: 20rpx; box-shadow: inset 0 0 0 1rpx $hair; }
 .gimg { height: 200rpx; border-radius: 20rpx; display: flex; align-items: center; justify-content: center; font-size: 90rpx; margin-bottom: 16rpx; }
 .g1 { background: linear-gradient(140deg, #e9f1fb, #d6e6fb); } .g2 { background: linear-gradient(140deg, #fbf1e4, #f7e3c8); } .g3 { background: linear-gradient(140deg, #e6f9f0, #c9f2df); }
 .gn { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: 26rpx; font-weight: 700; line-height: 1.3; min-height: 68rpx; }

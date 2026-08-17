@@ -25,14 +25,9 @@ export function getRegistrations(activityId, params = {}) {
     return request({ url: `/activities/${activityId}/registrations`, data: params })
 }
 
-/** 活动签到（领队扫码传 {code}，或会员自助 1km 签到，接口 5.7）。 */
+/** 活动签到（会员本人定位自助签到，接口 5.7）。payload: { latitude, longitude }。 */
 export function checkin(activityId, payload) {
     return request({ url: `/activities/${activityId}/checkin`, method: 'POST', data: payload })
-}
-
-/** 会员签发个人签到码（B6，带时效）。 */
-export function issueCheckinCode() {
-    return request({ url: '/checkin-code', method: 'POST' })
 }
 
 /** 审核报名（领队/管理员，接口 5.6）。action: approve/reject。 */
@@ -40,9 +35,10 @@ export function reviewRegistration(activityId, registrationId, payload) {
     return request({ url: `/activities/${activityId}/registrations/${registrationId}/review`, method: 'PUT', data: payload })
 }
 
-/** 批量发放活动积分（领队，接口 5.16）。 */
-export function distributePoints(activityId, members) {
-    return request({ url: `/activities/${activityId}/distribute-points`, method: 'POST', data: { members }, loading: true })
+/** 批量发放活动积分并回填骑行数据（领队，接口 5.16）。同一活动只能成功调用一次。
+ *  payload: { members, distance, duration, elevation }。 */
+export function distributePoints(activityId, payload) {
+    return request({ url: `/activities/${activityId}/distribute-points`, method: 'POST', data: payload, loading: true })
 }
 
 /** 创建活动（领队，接口 5.13）。 */
@@ -50,9 +46,9 @@ export function createActivity(payload) {
     return request({ url: '/activities', method: 'POST', data: payload, loading: true })
 }
 
-/** 赛后回填真实骑行数据（领队，C1）→ 写入参与者骑行档案与榜单。 */
-export function recordActivityData(activityId, payload) {
-    return request({ url: `/activities/${activityId}/record-data`, method: 'POST', data: payload, loading: true })
+/** 编辑活动（领队，接口 5.14）。仅传需要变更的字段——用于发起活动后补录路书等信息。 */
+export function updateActivity(activityId, payload) {
+    return request({ url: `/activities/${activityId}`, method: 'PUT', data: payload, loading: true })
 }
 
 /** 活动改期（领队，B4）→ 群发通知。 */
@@ -66,6 +62,6 @@ export function withdrawActivity(activityId, reason) {
 }
 
 /** 分享活动获取积分（接口 4.5）。 */
-export function shareActivity(activityId, shareTo = 'moments') {
+export function shareActivity(activityId, shareTo = 'session') {
     return request({ url: '/points/share', method: 'POST', data: { activityId, shareTo } })
 }
